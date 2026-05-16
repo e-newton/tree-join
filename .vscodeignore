@@ -1,0 +1,17 @@
+.vscode/**
+.vscode-test/**
+.claude/**
+src/**
+tests/**
+node_modules/**
+.github/**
+.gitignore
+.gitattributes
+.editorconfig
+.nvmrc
+tsconfig.json
+esbuild.config.mjs
+package-lock.json
+PRD.md
+TICKETS.md
+*.vsix

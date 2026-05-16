@@ -1,0 +1,69 @@
+{
+  "name": "tree-join",
+  "displayName": "Tree Join",
+  "description": "Toggle, split, and join TypeScript/JavaScript constructs using tree-sitter.",
+  "version": "0.0.1",
+  "publisher": "ericnewton",
+  "license": "MIT",
+  "author": "Eric Newton",
+  "homepage": "https://github.com/ericnewton/tree-join#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericnewton/tree-join.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ericnewton/tree-join/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=18.0.0"
+  },
+  "categories": [
+    "Formatters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "tree-sitter",
+    "typescript",
+    "javascript",
+    "formatter",
+    "split",
+    "join"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "tree-join.helloWorld",
+        "title": "Tree Join: Hello World"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs --prod",
+    "build:dev": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}
