@@ -57,6 +57,9 @@
     "build:wasm": "node scripts/build-wasm.mjs",
     "watch": "node esbuild.config.mjs --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:update": "UPDATE_FIXTURES=1 vitest run",
     "package": "vsce package",
     "vscode:prepublish": "npm run build"
   },
@@ -65,7 +68,8 @@
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.24.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "web-tree-sitter": "^0.25.10"
