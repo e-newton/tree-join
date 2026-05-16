@@ -1,8 +1,40 @@
+import { cpSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
 
 const args = new Set(process.argv.slice(2));
 const isProd = args.has('--prod');
 const isWatch = args.has('--watch');
+
+const repoRoot = fileURLToPath(new URL('.', import.meta.url));
+const distWasmDir = join(repoRoot, 'dist', 'wasm');
+const vendoredWasmDir = join(repoRoot, 'wasm');
+const runtimeWasm = join(
+  repoRoot,
+  'node_modules',
+  'web-tree-sitter',
+  'tree-sitter.wasm',
+);
+
+function copyWasm() {
+  rmSync(distWasmDir, { recursive: true, force: true });
+  mkdirSync(distWasmDir, { recursive: true });
+  for (const name of ['tree-sitter-typescript.wasm', 'tree-sitter-tsx.wasm']) {
+    cpSync(join(vendoredWasmDir, name), join(distWasmDir, name));
+  }
+  cpSync(runtimeWasm, join(distWasmDir, 'tree-sitter.wasm'));
+}
+
+const copyWasmPlugin = {
+  name: 'copy-wasm',
+  setup(build) {
+    build.onEnd((result) => {
+      if (result.errors.length > 0) return;
+      copyWasm();
+    });
+  },
+};
 
 const watchLogPlugin = {
   name: 'watch-log',
@@ -30,7 +62,7 @@ const config = {
   sourcemap: isProd ? false : 'inline',
   minify: isProd,
   logLevel: 'info',
-  plugins: isWatch ? [watchLogPlugin] : [],
+  plugins: [copyWasmPlugin, ...(isWatch ? [watchLogPlugin] : [])],
 };
 
 if (isWatch) {

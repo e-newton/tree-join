@@ -3,6 +3,8 @@
 .claude/**
 src/**
 tests/**
+scripts/**
+wasm/**
 node_modules/**
 .github/**
 .gitignore
