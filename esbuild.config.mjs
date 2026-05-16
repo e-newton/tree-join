@@ -59,6 +59,14 @@ const config = {
   target: 'node18',
   format: 'cjs',
   external: ['vscode'],
+  alias: {
+    'web-tree-sitter': join(
+      repoRoot,
+      'node_modules',
+      'web-tree-sitter',
+      'tree-sitter.cjs',
+    ),
+  },
   sourcemap: isProd ? false : 'inline',
   minify: isProd,
   logLevel: 'info',
