@@ -10,20 +10,18 @@ const isWatch = args.has('--watch');
 const repoRoot = fileURLToPath(new URL('.', import.meta.url));
 const distWasmDir = join(repoRoot, 'dist', 'wasm');
 const vendoredWasmDir = join(repoRoot, 'wasm');
-const runtimeWasm = join(
-  repoRoot,
-  'node_modules',
-  'web-tree-sitter',
-  'tree-sitter.wasm',
-);
 
 function copyWasm() {
   rmSync(distWasmDir, { recursive: true, force: true });
   mkdirSync(distWasmDir, { recursive: true });
-  for (const name of ['tree-sitter-typescript.wasm', 'tree-sitter-tsx.wasm']) {
+  const wasmFiles = [
+    'tree-sitter.wasm',
+    'tree-sitter-typescript.wasm',
+    'tree-sitter-tsx.wasm',
+  ];
+  for (const name of wasmFiles) {
     cpSync(join(vendoredWasmDir, name), join(distWasmDir, name));
   }
-  cpSync(runtimeWasm, join(distWasmDir, 'tree-sitter.wasm'));
 }
 
 const copyWasmPlugin = {

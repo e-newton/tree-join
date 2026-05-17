@@ -1,21 +1,7 @@
 import * as vscode from 'vscode';
 import { Language, Parser } from 'web-tree-sitter';
-
-export type { Node as SyntaxNode, Point, Tree } from 'web-tree-sitter';
-
-type GrammarKey = 'typescript' | 'tsx';
-
-const LANGUAGE_ID_TO_GRAMMAR: Record<string, GrammarKey> = {
-  typescript: 'typescript',
-  javascript: 'typescript',
-  typescriptreact: 'tsx',
-  javascriptreact: 'tsx',
-};
-
-const GRAMMAR_FILE: Record<GrammarKey, string> = {
-  typescript: 'tree-sitter-typescript.wasm',
-  tsx: 'tree-sitter-tsx.wasm',
-};
+import { GRAMMAR_FILE, LANGUAGE_ID_TO_GRAMMAR } from './parseSource';
+import type { GrammarKey } from './parseSource';
 
 let extensionUri: vscode.Uri | undefined;
 let runtimeInit: Promise<void> | undefined;

@@ -1,4 +1,4 @@
-import { SyntaxNode } from "./parser";
+import { SyntaxNode } from "./parseSource";
 
 type ElementsSource = { kind: 'named-children' };
 
