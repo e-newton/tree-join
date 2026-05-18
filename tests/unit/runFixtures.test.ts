@@ -21,18 +21,28 @@ function findFirstSupported(node: SyntaxNode): SyntaxNode | undefined {
   return undefined;
 }
 
-runFixtures(new URL('../fixtures/sample', import.meta.url), async (input) => input);
-runFixtures(new URL('../fixtures/split/literals', import.meta.url), async (input) => {
+const DEFAULT_SPLIT_OPTIONS: SplitOptions = {
+  tabSize: 2,
+  insertSpaces: true,
+};
+
+async function runSplit(input: string, opts: Partial<SplitOptions> | undefined): Promise<string> {
   const tree = await getTypescriptTree(input);
   const node = findFirstSupported(tree.rootNode);
 
   if (!node) throw Error('Cannot find supported node');
 
-  const OPTIONS: SplitOptions = {
-    tabSize: 2,
-    insertSpaces: true,
-  };
-
-  const { newText, range } = splitNode(node, input, OPTIONS);
+  const resolved: SplitOptions = { ...DEFAULT_SPLIT_OPTIONS, ...(opts ?? {}) };
+  const { newText, range } = splitNode(node, input, resolved);
   return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
-});
+}
+
+runFixtures(new URL('../fixtures/sample', import.meta.url), async (input) => input);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/literals', import.meta.url),
+  runSplit,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/literals-tabs', import.meta.url),
+  (input, opts) => runSplit(input, { insertSpaces: false, ...(opts ?? {}) }),
+);
