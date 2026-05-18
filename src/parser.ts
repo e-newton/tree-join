@@ -1,21 +1,7 @@
 import * as vscode from 'vscode';
 import { Language, Parser } from 'web-tree-sitter';
-
-export type { Node as SyntaxNode, Point, Tree } from 'web-tree-sitter';
-
-type GrammarKey = 'typescript' | 'tsx';
-
-const LANGUAGE_ID_TO_GRAMMAR: Record<string, GrammarKey> = {
-  typescript: 'typescript',
-  javascript: 'typescript',
-  typescriptreact: 'tsx',
-  javascriptreact: 'tsx',
-};
-
-const GRAMMAR_FILE: Record<GrammarKey, string> = {
-  typescript: 'tree-sitter-typescript.wasm',
-  tsx: 'tree-sitter-tsx.wasm',
-};
+import { GRAMMAR_FILE, LANGUAGE_ID_TO_GRAMMAR } from './parseSource';
+import type { GrammarKey } from './parseSource';
 
 let extensionUri: vscode.Uri | undefined;
 let runtimeInit: Promise<void> | undefined;
@@ -37,7 +23,7 @@ function ensureRuntime(): Promise<void> {
   if (!runtimeInit) {
     runtimeInit = (async () => {
       const wasmBinary = await readWasm('tree-sitter.wasm');
-      await Parser.init({ wasmBinary } as object);
+      await Parser.init({ wasmBinary });
     })().catch((err) => {
       runtimeInit = undefined;
       reportLoadFailure('runtime', err);
