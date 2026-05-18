@@ -17,7 +17,9 @@ type SupportedNodeTypes =
   | 'arguments'
   | 'formal_parameters'
   | 'array_pattern'
-  | 'object_pattern';
+  | 'object_pattern'
+  | 'named_imports'
+  | 'export_clause';
 type SupportedSyntaxNode = SyntaxNode & { type: SupportedNodeTypes };
 
 export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
@@ -63,6 +65,22 @@ export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
   },
   object_pattern: {
     type: 'object_pattern',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+  named_imports: {
+    type: 'named_imports',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+  export_clause: {
+    type: 'export_clause',
     openToken: '{',
     closeToken: '}',
     separator: ',',
