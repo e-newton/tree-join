@@ -11,7 +11,13 @@ export interface NodeTypeDescriptor {
   elementsField: ElementsSource;
 }
 
-type SupportedNodeTypes = 'array' | 'object';
+type SupportedNodeTypes =
+  | 'array'
+  | 'object'
+  | 'arguments'
+  | 'formal_parameters'
+  | 'array_pattern'
+  | 'object_pattern';
 type SupportedSyntaxNode = SyntaxNode & { type: SupportedNodeTypes };
 
 export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
@@ -25,6 +31,38 @@ export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
   },
   object: {
     type: 'object',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+  arguments: {
+    type: 'arguments',
+    openToken: '(',
+    closeToken: ')',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  formal_parameters: {
+    type: 'formal_parameters',
+    openToken: '(',
+    closeToken: ')',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  array_pattern: {
+    type: 'array_pattern',
+    openToken: '[',
+    closeToken: ']',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  object_pattern: {
+    type: 'object_pattern',
     openToken: '{',
     closeToken: '}',
     separator: ',',

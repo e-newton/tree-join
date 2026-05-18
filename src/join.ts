@@ -22,11 +22,12 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
     startIndex: node.startIndex,
     end: node.endPosition,
     endIndex: node.endIndex,
-  }; // Only applies to literals right now
+  };
 
   const runs: Run[] = [];
 
   let seenOpenToken = false;
+  let expectingElement = true;
   let pendingTrailingComment = false;
   let lastPushedToken: SyntaxNode | null = null;
   let currentRun: Run = {
@@ -50,19 +51,20 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
     }
 
     if (childNode.type === descriptor.closeToken) {
-      if (currentRun.nodes.length) {
+      if (!expectingElement) {
         runs.push(currentRun);
       }
       break;
     }
 
     if (childNode.type === descriptor.separator) {
-      if (currentRun.nodes.length) {
+      if (expectingElement) {
+        runs.push({ nodes: [] });
+      } else {
         pendingTrailingComment = true;
         runs.push(currentRun);
-        currentRun = {
-          nodes: [],
-        };
+        currentRun = { nodes: [] };
+        expectingElement = true;
       }
       continue;
     }
@@ -82,6 +84,7 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
 
     pendingTrailingComment = false;
     currentRun.nodes.push(childNode);
+    expectingElement = false;
     lastPushedToken = childNode;
   }
 
@@ -102,15 +105,16 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
     if (!run) continue;
     const firstNode = run.nodes.at(0);
     const lastNode = run.nodes.at(-1);
-    if (!firstNode || !lastNode) continue;
     const content = run.nodes.map((n) => n.text).join(' ');
 
-    elements.push({
-      originalStart: firstNode.startIndex,
-      originalEnd: lastNode.endIndex,
-      newStart: offset,
-      newEnd: offset + content.length,
-    });
+    if (firstNode && lastNode) {
+      elements.push({
+        originalStart: firstNode.startIndex,
+        originalEnd: lastNode.endIndex,
+        newStart: offset,
+        newEnd: offset + content.length,
+      });
+    }
 
     contentParts.push(content);
     offset += content.length;

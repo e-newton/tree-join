@@ -1,4 +1,4 @@
-function f() {
+if (true) {
   const xs = [
     "alpha",
     "bravo",

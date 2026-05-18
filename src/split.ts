@@ -24,7 +24,7 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
     startIndex: node.startIndex,
     end: node.endPosition,
     endIndex: node.endIndex,
-  }; // Only applies to literals right now
+  };
 
   const lineStart = node.startIndex - node.startPosition.column;
   const baseIndent = source.slice(lineStart, node.startIndex).match(/^\s*/)?.[0] ?? '';
@@ -61,6 +61,7 @@ function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Ru
   const runs: Run[] = [];
 
   let seenOpenToken = false;
+  let expectingElement = true;
   let pendingTrailingComment = false;
   let lastPushedToken: SyntaxNode | null = null;
 
@@ -80,21 +81,21 @@ function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Ru
     }
 
     if (childNode.type === descriptor.closeToken) {
-      if (currentRun.nodes.length) {
+      if (!expectingElement) {
         runs.push(currentRun);
       }
       break;
     }
 
     if (childNode.type === descriptor.separator) {
-      if (currentRun.nodes.length) {
+      if (expectingElement) {
+        runs.push({ nodes: [], hasSeparator: false });
+      } else {
         pendingTrailingComment = true;
         runs.push(currentRun);
+        currentRun = { nodes: [], hasSeparator: false };
+        expectingElement = true;
       }
-      currentRun = {
-        nodes: [],
-        hasSeparator: false,
-      };
       continue;
     }
 
@@ -114,6 +115,7 @@ function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Ru
 
     pendingTrailingComment = false;
     currentRun.nodes.push(childNode);
+    expectingElement = false;
     lastPushedToken = childNode;
   }
 
@@ -132,19 +134,22 @@ function buildElements(
   let offset = firstElementOffsetInNewText;
 
   for (const run of runs) {
-    const firstIndex = run.nodes.at(0)?.startIndex ?? 0;
-    const lastIndex = run.nodes.at(-1)?.endIndex ?? 0;
-    const content = source.slice(firstIndex, lastIndex);
+    const firstNode = run.nodes.at(0);
+    const lastNode = run.nodes.at(-1);
+    const content =
+      firstNode && lastNode ? source.slice(firstNode.startIndex, lastNode.endIndex) : '';
     const sep = run.hasSeparator ? '' : descriptor.separator;
     const line = childIndentTabString + content + sep;
-    const contentStart = offset + childIndentTabString.length;
 
-    elements.push({
-      originalStart: firstIndex,
-      originalEnd: lastIndex,
-      newStart: contentStart,
-      newEnd: contentStart + content.length,
-    });
+    if (firstNode && lastNode) {
+      const contentStart = offset + childIndentTabString.length;
+      elements.push({
+        originalStart: firstNode.startIndex,
+        originalEnd: lastNode.endIndex,
+        newStart: contentStart,
+        newEnd: contentStart + content.length,
+      });
+    }
 
     strings.push(line);
     offset += line.length + 1; // +1 for the '\n' joining element lines

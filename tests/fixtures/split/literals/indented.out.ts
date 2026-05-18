@@ -1,4 +1,4 @@
-function f() {
+if (true) {
   const xs = [
     1,
     2,
