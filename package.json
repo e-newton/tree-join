@@ -46,8 +46,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "tree-join.helloWorld",
-        "title": "Tree Join: Hello World"
+        "command": "tree-join.toggle",
+        "title": "Tree Join: Toggle"
+      },
+      {
+        "command": "tree-join.join",
+        "title": "Tree Join: Join"
+      },
+      {
+        "command": "tree-join.split",
+        "title": "Tree Join: Split"
       }
     ]
   },

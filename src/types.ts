@@ -1,6 +1,6 @@
 import { Point } from './parseSource';
 
-type JoinRefusal = {
+export type JoinRefusal = {
   refused: 'width' | 'lineComment';
 };
 
