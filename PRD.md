@@ -19,13 +19,13 @@ Non-goals (v1): non-TS/JS languages, custom per-node layout templates, format-on
 
 ## 3. Commands
 
-| Command id | Behavior |
-|---|---|
-| `tree-join.toggle` | If target node spans one line → split; else join. |
-| `tree-join.split` | Force split (no-op if already multi-line). |
-| `tree-join.join` | Force join (subject to width / comment guards). |
+| Command id                 | Behavior                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `tree-join.toggle`         | If target node spans one line → split; else join.    |
+| `tree-join.split`          | Force split (no-op if already multi-line).           |
+| `tree-join.join`           | Force join (subject to width / comment guards).      |
 | `tree-join.splitRecursive` | Split target and recurse into supported descendants. |
-| `tree-join.joinRecursive` | Join target and recurse into supported descendants. |
+| `tree-join.joinRecursive`  | Join target and recurse into supported descendants.  |
 
 No default keybindings. Recommended bindings documented in README.
 
@@ -47,11 +47,12 @@ Each node type has a small descriptor: open token, close token, separator (`,` f
 - Walk from the cursor's tree-sitter node up the tree.
 - Pick the **innermost** ancestor whose type is in the supported set.
 - With multiple cursors: resolve independently per cursor; collapse all resulting edits into one `WorkspaceEdit` so undo is atomic.
-- If no supported node is found at a cursor, skip that cursor. If *all* cursors miss, show a transient status-bar message: `tree-join: no splittable node at cursor`.
+- If no supported node is found at a cursor, skip that cursor. If _all_ cursors miss, show a transient status-bar message: `tree-join: no splittable node at cursor`.
 
 ## 6. Transform rules
 
 ### Split
+
 - Place opening bracket at end of current line (no newline before it).
 - Each element on its own line, indented one level deeper than the line of the opening bracket.
 - Closing bracket on its own line, indented to match the opening bracket's line.
@@ -59,6 +60,7 @@ Each node type has a small descriptor: open token, close token, separator (`,` f
 - Indentation unit and width: read from `TextEditor.options.tabSize` / `insertSpaces` for the active editor.
 
 ### Join
+
 - Collapse to single line with elements separated by `, ` (one space after comma).
 - Object-like nodes (`object`, `object_pattern`, `object_type`, `named_imports`, `export_clause`): a single space inside both braces (`{ a: 1 }`).
 - Non-object nodes (`array`, `array_pattern`, `arguments`, `formal_parameters`, `tuple_type`, `type_arguments`, `type_parameters`, JSX attrs): no padding (`[1, 2]`).
@@ -66,10 +68,12 @@ Each node type has a small descriptor: open token, close token, separator (`,` f
 - **Refuse to join** if the resulting line length would exceed `tree-join.maxJoinLength` (default: first value in `editor.rulers` if present, else 100). Surface refusal in status bar.
 
 ### Comments
+
 - Block comments (`/* … */`): preserved inline on join, preserved on the appropriate line on split.
 - Line comments (`// …`) inside the node: on split, preserved with their associated element. On join, **refuse** with status-bar message: `tree-join: cannot join — line comment would be lost`.
 
 ### Cursor placement
+
 - Identify the token/element under the cursor before the edit (by tree-sitter node id and offset within it).
 - After the edit, restore the cursor to the same logical token. Fallback: place at the start of the transformed node.
 
@@ -84,19 +88,19 @@ Each node type has a small descriptor: open token, close token, separator (`,` f
   "tree-join.maxJoinLength": {
     "type": "number",
     "default": 100,
-    "description": "Max line length for a join result. Falls back to the first editor.rulers value if 0."
+    "description": "Max line length for a join result. Falls back to the first editor.rulers value if 0.",
   },
   "tree-join.trailingComma": {
     "type": "string",
     "enum": ["add", "preserve", "never"],
     "default": "add",
-    "description": "Trailing comma behavior on split. Join always removes."
+    "description": "Trailing comma behavior on split. Join always removes.",
   },
   "tree-join.bracketSpacing": {
     "type": "boolean",
     "default": true,
-    "description": "Pad inside object-like braces on join."
-  }
+    "description": "Pad inside object-like braces on join.",
+  },
 }
 ```
 

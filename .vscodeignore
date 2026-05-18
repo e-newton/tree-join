@@ -13,6 +13,11 @@ node_modules/**
 .nvmrc
 tsconfig.json
 esbuild.config.mjs
+eslint.config.mjs
+.prettierrc.json
+.prettierignore
+.git-blame-ignore-revs
+vitest.config.ts
 package-lock.json
 PRD.md
 TICKETS.md

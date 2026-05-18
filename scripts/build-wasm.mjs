@@ -39,18 +39,15 @@ try {
     }
     const out = join(wasmDir, `tree-sitter-${lang}.wasm`);
     console.log(`\nBuilding ${lang} grammar -> ${out}`);
-    sh(
-      'npx',
-      [
-        '--yes',
-        `tree-sitter-cli@${TREE_SITTER_CLI_VERSION}`,
-        'build',
-        '--wasm',
-        '--output',
-        out,
-        langDir,
-      ],
-    );
+    sh('npx', [
+      '--yes',
+      `tree-sitter-cli@${TREE_SITTER_CLI_VERSION}`,
+      'build',
+      '--wasm',
+      '--output',
+      out,
+      langDir,
+    ]);
   }
 
   console.log('\nDone. wasm/ contents:');

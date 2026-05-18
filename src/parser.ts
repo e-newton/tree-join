@@ -65,8 +65,5 @@ export async function getTree(
 
 function reportLoadFailure(what: string, err: unknown): void {
   console.error(`tree-join: failed to load ${what} WASM`, err);
-  vscode.window.setStatusBarMessage(
-    `tree-join: parser failed to load (${what})`,
-    5000,
-  );
+  vscode.window.setStatusBarMessage(`tree-join: parser failed to load (${what})`, 5000);
 }

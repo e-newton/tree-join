@@ -14,11 +14,7 @@ const vendoredWasmDir = join(repoRoot, 'wasm');
 function copyWasm() {
   rmSync(distWasmDir, { recursive: true, force: true });
   mkdirSync(distWasmDir, { recursive: true });
-  const wasmFiles = [
-    'tree-sitter.wasm',
-    'tree-sitter-typescript.wasm',
-    'tree-sitter-tsx.wasm',
-  ];
+  const wasmFiles = ['tree-sitter.wasm', 'tree-sitter-typescript.wasm', 'tree-sitter-tsx.wasm'];
   for (const name of wasmFiles) {
     cpSync(join(vendoredWasmDir, name), join(distWasmDir, name));
   }
@@ -58,12 +54,7 @@ const config = {
   format: 'cjs',
   external: ['vscode'],
   alias: {
-    'web-tree-sitter': join(
-      repoRoot,
-      'node_modules',
-      'web-tree-sitter',
-      'tree-sitter.cjs',
-    ),
+    'web-tree-sitter': join(repoRoot, 'node_modules', 'web-tree-sitter', 'tree-sitter.cjs'),
   },
   sourcemap: isProd ? false : 'inline',
   minify: isProd,
