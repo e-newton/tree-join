@@ -1,16 +1,10 @@
 import { descriptorFor, NodeTypeDescriptor } from './nodeTypes';
-import { Point, SyntaxNode } from './parseSource';
+import { SyntaxNode } from './parseSource';
+import { ElementOffsets, Range, TransformSuccess } from './types';
 
 export type SplitOptions = {
   tabSize: number;
   insertSpaces: boolean;
-};
-
-type Range = {
-  start: Point;
-  startIndex: number;
-  end: Point;
-  endIndex: number;
 };
 
 type Run = {
@@ -18,11 +12,7 @@ type Run = {
   hasSeparator: boolean;
 };
 
-export function splitNode(
-  node: SyntaxNode,
-  source: string,
-  opts: SplitOptions,
-): { newText: string; range: Range } {
+export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions): TransformSuccess {
   const descriptor = descriptorFor(node);
 
   if (!descriptor) {
@@ -47,21 +37,24 @@ export function splitNode(
     return {
       newText: node.text,
       range,
+      elements: [],
     };
   }
 
-  const elementStrings = createElementStrings(
+  const firstElementOffsetInNewText = descriptor.openToken.length + 1; // openToken + '\n'
+  const { strings, elements } = buildElements(
     elementRuns,
     descriptor,
     source,
     childIndentTabString,
+    firstElementOffsetInNewText,
   );
 
-  const body = elementStrings.join('\n');
+  const body = strings.join('\n');
   const paddedEnd = baseIndent + descriptor.closeToken;
   const finalString = descriptor.openToken + '\n' + body + '\n' + paddedEnd;
 
-  return { newText: finalString, range };
+  return { newText: finalString, range, elements };
 }
 
 function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[] {
@@ -127,22 +120,35 @@ function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Ru
   return runs;
 }
 
-function createElementStrings(
+function buildElements(
   runs: Run[],
   descriptor: NodeTypeDescriptor,
   source: string,
   childIndentTabString: string,
-) {
-  const elementStrings = runs.map((run) => {
+  firstElementOffsetInNewText: number,
+): { strings: string[]; elements: ElementOffsets[] } {
+  const strings: string[] = [];
+  const elements: ElementOffsets[] = [];
+  let offset = firstElementOffsetInNewText;
+
+  for (const run of runs) {
     const firstIndex = run.nodes.at(0)?.startIndex ?? 0;
     const lastIndex = run.nodes.at(-1)?.endIndex ?? 0;
+    const content = source.slice(firstIndex, lastIndex);
+    const sep = run.hasSeparator ? '' : descriptor.separator;
+    const line = childIndentTabString + content + sep;
+    const contentStart = offset + childIndentTabString.length;
 
-    return (
-      childIndentTabString +
-      source.slice(firstIndex, lastIndex) +
-      (run.hasSeparator ? '' : descriptor.separator)
-    );
-  });
+    elements.push({
+      originalStart: firstIndex,
+      originalEnd: lastIndex,
+      newStart: contentStart,
+      newEnd: contentStart + content.length,
+    });
 
-  return elementStrings;
+    strings.push(line);
+    offset += line.length + 1; // +1 for the '\n' joining element lines
+  }
+
+  return { strings, elements };
 }

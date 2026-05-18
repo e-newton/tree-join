@@ -1,12 +1,6 @@
 import { descriptorFor } from './nodeTypes';
-import { Point, SyntaxNode } from './parseSource';
-
-type Range = {
-  start: Point;
-  startIndex: number;
-  end: Point;
-  endIndex: number;
-};
+import { SyntaxNode } from './parseSource';
+import { ElementOffsets, Range, TransformResult } from './types';
 
 export type JoinOptions = {
   maxJoinLength?: number;
@@ -16,11 +10,7 @@ type Run = {
   nodes: SyntaxNode[];
 };
 
-export function joinNode(
-  node: SyntaxNode,
-  source: string,
-  opts: JoinOptions,
-): { newText: string; range: Range } | { refused: 'width' | 'lineComment' } {
+export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): TransformResult {
   const descriptor = descriptorFor(node);
 
   if (!descriptor) {
@@ -99,11 +89,35 @@ export function joinNode(
     return {
       newText: node.text,
       range,
+      elements: [],
     };
   }
 
-  let body = runs.map((run) => run.nodes.map((n) => n.text).join(' ')).join(', ');
+  const elements: ElementOffsets[] = [];
+  let offset = descriptor.openToken.length + (descriptor.bracketSpacing ? 1 : 0);
+  const contentParts: string[] = [];
 
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i];
+    if (!run) continue;
+    const firstNode = run.nodes.at(0);
+    const lastNode = run.nodes.at(-1);
+    if (!firstNode || !lastNode) continue;
+    const content = run.nodes.map((n) => n.text).join(' ');
+
+    elements.push({
+      originalStart: firstNode.startIndex,
+      originalEnd: lastNode.endIndex,
+      newStart: offset,
+      newEnd: offset + content.length,
+    });
+
+    contentParts.push(content);
+    offset += content.length;
+    if (i < runs.length - 1) offset += 2; // ', '
+  }
+
+  let body = contentParts.join(', ');
   if (descriptor.bracketSpacing) {
     body = ' ' + body + ' ';
   }
@@ -121,5 +135,5 @@ export function joinNode(
     }
   }
 
-  return { newText, range };
+  return { newText, range, elements };
 }
