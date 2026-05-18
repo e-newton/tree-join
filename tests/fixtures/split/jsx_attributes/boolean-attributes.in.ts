@@ -1,0 +1,1 @@
+<Foo disabled checked readonly />

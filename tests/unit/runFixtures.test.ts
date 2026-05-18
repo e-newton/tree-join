@@ -6,8 +6,8 @@ import { runFixtures } from '../runFixtures';
 import { join } from 'node:path';
 import { isSupported } from '../../src/nodeTypes';
 
-async function getTypescriptTree(source: string): Promise<Tree> {
-  return await parseSource(source, 'typescript', async (filename: string) => {
+async function getTree(source: string, languageId: string): Promise<Tree> {
+  return await parseSource(source, languageId, async (filename: string) => {
     return readFileSync(join(__dirname, '../../wasm', filename));
   });
 }
@@ -27,8 +27,12 @@ const DEFAULT_SPLIT_OPTIONS: SplitOptions = {
   insertSpaces: true,
 };
 
-async function runSplit(input: string, opts: Partial<SplitOptions> | undefined): Promise<string> {
-  const tree = await getTypescriptTree(input);
+async function runSplitWith(
+  languageId: string,
+  input: string,
+  opts: Partial<SplitOptions> | undefined,
+): Promise<string> {
+  const tree = await getTree(input, languageId);
   const node = findFirstSupported(tree.rootNode);
 
   if (!node) throw Error('Cannot find supported node');
@@ -38,10 +42,20 @@ async function runSplit(input: string, opts: Partial<SplitOptions> | undefined):
   return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
 }
 
+const runSplit = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitWith('typescript', input, opts);
+
+const runSplitTsx = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitWith('typescriptreact', input, opts);
+
 const DEFAULT_JOIN_OPTIONS: JoinOptions = {};
 
-async function runJoin(input: string, opts: Partial<JoinOptions> | undefined): Promise<string> {
-  const tree = await getTypescriptTree(input);
+async function runJoinWith(
+  languageId: string,
+  input: string,
+  opts: Partial<JoinOptions> | undefined,
+): Promise<string> {
+  const tree = await getTree(input, languageId);
   const node = findFirstSupported(tree.rootNode);
 
   if (!node) throw Error('Cannot find supported node');
@@ -56,6 +70,12 @@ async function runJoin(input: string, opts: Partial<JoinOptions> | undefined): P
   const { newText, range } = result;
   return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
 }
+
+const runJoin = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinWith('typescript', input, opts);
+
+const runJoinTsx = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinWith('typescriptreact', input, opts);
 
 runFixtures(new URL('../fixtures/sample', import.meta.url), async (input) => input);
 runFixtures<Partial<SplitOptions>>(
@@ -135,4 +155,52 @@ runFixtures<Partial<JoinOptions>>(
 runFixtures<Partial<JoinOptions>>(
   new URL('../fixtures/join/object_pattern-refused-width', import.meta.url),
   runJoin,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/named_imports', import.meta.url),
+  runSplit,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/named_imports', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/named_imports-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/named_imports-refused-width', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/export_clause', import.meta.url),
+  runSplit,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/export_clause', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/export_clause-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/export_clause-refused-width', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/jsx_attributes', import.meta.url),
+  runSplitTsx,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/jsx_attributes', import.meta.url),
+  runJoinTsx,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/jsx_attributes-refused-line-comment', import.meta.url),
+  runJoinTsx,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/jsx_attributes-refused-width', import.meta.url),
+  runJoinTsx,
 );
