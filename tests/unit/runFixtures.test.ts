@@ -66,6 +66,22 @@ runFixtures<Partial<SplitOptions>>(
   new URL('../fixtures/split/literals-tabs', import.meta.url),
   (input, opts) => runSplit(input, { insertSpaces: false, ...(opts ?? {}) }),
 );
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/arguments', import.meta.url),
+  runSplit,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/formal_parameters', import.meta.url),
+  runSplit,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/array_pattern', import.meta.url),
+  runSplit,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split/object_pattern', import.meta.url),
+  runSplit,
+);
 runFixtures<Partial<JoinOptions>>(new URL('../fixtures/join/literals', import.meta.url), runJoin);
 runFixtures<Partial<JoinOptions>>(
   new URL('../fixtures/join/literals-refused-line-comment', import.meta.url),
@@ -73,5 +89,50 @@ runFixtures<Partial<JoinOptions>>(
 );
 runFixtures<Partial<JoinOptions>>(
   new URL('../fixtures/join/literals-refused-width', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(new URL('../fixtures/join/arguments', import.meta.url), runJoin);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/arguments-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/arguments-refused-width', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/formal_parameters', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/formal_parameters-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/formal_parameters-refused-width', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/array_pattern', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/array_pattern-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/array_pattern-refused-width', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/object_pattern', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/object_pattern-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/object_pattern-refused-width', import.meta.url),
   runJoin,
 );
