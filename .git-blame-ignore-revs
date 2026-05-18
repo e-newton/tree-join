@@ -1,0 +1,5 @@
+# Revisions listed below are skipped by `git blame` when this file is enabled:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Each entry should be a commit SHA followed by a comment explaining the
+# rationale (typically a mechanical reformat or rename).
