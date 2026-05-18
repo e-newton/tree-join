@@ -3,3 +3,6 @@
 #
 # Each entry should be a commit SHA followed by a comment explaining the
 # rationale (typically a mechanical reformat or rename).
+
+# Apply Prettier to existing files
+3229624e77a5d6f0ef008fa54b0589aaf16b0f8d
