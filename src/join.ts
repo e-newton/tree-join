@@ -1,4 +1,4 @@
-import { descriptorFor } from './nodeTypes';
+import { descriptorFor, NodeTypeDescriptor } from './nodeTypes';
 import { SyntaxNode } from './parseSource';
 import { ElementOffsets, Range, TransformResult } from './types';
 
@@ -34,7 +34,9 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
     nodes: [],
   };
 
-  for (const childNode of node.children) {
+  const children = getChildren(node, descriptor);
+
+  for (const childNode of children) {
     if (!childNode) continue;
 
     if (!seenOpenToken) {
@@ -140,4 +142,18 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
   }
 
   return { newText, range, elements };
+}
+
+function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {
+  if (descriptor.elementsField.kind === 'named-children') {
+    return node.children.filter((c) => !!c);
+  }
+
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    return node.children.filter(
+      (childNode): childNode is SyntaxNode => !!childNode && childNode.type === 'jsx_attribute',
+    );
+  }
+
+  return [];
 }

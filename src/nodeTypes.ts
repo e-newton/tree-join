@@ -1,6 +1,8 @@
 import { SyntaxNode } from './parseSource';
 
-type ElementsSource = { kind: 'named-children' };
+type SourceType = 'named-children' | 'jsx-element-children';
+
+type ElementsSource = { kind: SourceType };
 
 export interface NodeTypeDescriptor {
   type: string;
@@ -19,7 +21,9 @@ type SupportedNodeTypes =
   | 'array_pattern'
   | 'object_pattern'
   | 'named_imports'
-  | 'export_clause';
+  | 'export_clause'
+  | 'jsx_opening_element'
+  | 'jsx_self_closing_element';
 type SupportedSyntaxNode = SyntaxNode & { type: SupportedNodeTypes };
 
 export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
@@ -86,6 +90,22 @@ export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
     separator: ',',
     bracketSpacing: true,
     elementsField: { kind: 'named-children' },
+  },
+  jsx_opening_element: {
+    type: 'jsx_opening_element',
+    openToken: '<',
+    closeToken: '>',
+    separator: ' ',
+    bracketSpacing: false,
+    elementsField: { kind: 'jsx-element-children' },
+  },
+  jsx_self_closing_element: {
+    type: 'jsx_opening_element',
+    openToken: '<',
+    closeToken: '/>',
+    separator: ' ',
+    bracketSpacing: false,
+    elementsField: { kind: 'jsx-element-children' },
   },
 } as const;
 

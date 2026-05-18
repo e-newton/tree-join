@@ -52,7 +52,7 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
 
   const body = strings.join('\n');
   const paddedEnd = baseIndent + descriptor.closeToken;
-  const finalString = descriptor.openToken + '\n' + body + '\n' + paddedEnd;
+  const finalString = getOpeningToken(node, descriptor) + '\n' + body + '\n' + paddedEnd;
 
   return { newText: finalString, range, elements };
 }
@@ -70,23 +70,13 @@ function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Ru
     hasSeparator: false,
   };
 
-  for (const childNode of node.children) {
-    if (!childNode) continue;
+  const children = getChildren(node, descriptor);
 
-    if (!seenOpenToken) {
-      if (childNode.type === descriptor.openToken) {
-        seenOpenToken = true;
-      }
-      continue;
-    }
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    return children.map((childNode) => ({ nodes: [childNode], hasSeparator: true }));
+  }
 
-    if (childNode.type === descriptor.closeToken) {
-      if (!expectingElement) {
-        runs.push(currentRun);
-      }
-      break;
-    }
-
+  for (const childNode of children) {
     if (childNode.type === descriptor.separator) {
       if (expectingElement) {
         runs.push({ nodes: [], hasSeparator: false });
@@ -117,6 +107,10 @@ function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Ru
     currentRun.nodes.push(childNode);
     expectingElement = false;
     lastPushedToken = childNode;
+  }
+
+  if (currentRun.nodes.length) {
+    runs.push(currentRun);
   }
 
   return runs;
@@ -156,4 +150,38 @@ function buildElements(
   }
 
   return { strings, elements };
+}
+
+function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
+  if (descriptor.elementsField.kind === 'named-children') {
+    return descriptor.openToken;
+  }
+
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    const openingToken = descriptor.openToken;
+    const identifier = node.namedChildren.find(
+      (c) => !!c && ['identifier', 'member_expression', 'jsx_namespace_name'].includes(c.type),
+    );
+    return openingToken + identifier?.text;
+  }
+}
+
+function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {
+  if (descriptor.elementsField.kind === 'named-children') {
+    return node.children.filter(
+      (childNode): childNode is SyntaxNode =>
+        !!childNode && (childNode.isNamed || childNode.type === descriptor.separator),
+    );
+  }
+
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    return node.children.filter(
+      (childNode): childNode is SyntaxNode =>
+        !!childNode &&
+        (['jsx_attribute', 'jsx_expression'].includes(childNode.type) ||
+          childNode.type === descriptor.separator),
+    );
+  }
+
+  return [];
 }
