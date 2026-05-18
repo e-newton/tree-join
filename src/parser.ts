@@ -23,7 +23,7 @@ function ensureRuntime(): Promise<void> {
   if (!runtimeInit) {
     runtimeInit = (async () => {
       const wasmBinary = await readWasm('tree-sitter.wasm');
-      await Parser.init({ wasmBinary } as object);
+      await Parser.init({ wasmBinary });
     })().catch((err) => {
       runtimeInit = undefined;
       reportLoadFailure('runtime', err);

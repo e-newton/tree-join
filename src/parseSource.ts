@@ -20,10 +20,10 @@ export async function parseSource(
   source: string,
   languageId: string,
   loadWasm: (filename: string) => Promise<Uint8Array>
-): Promise<import('web-tree-sitter').Tree | undefined> {
+): Promise<import('web-tree-sitter').Tree> {
   // Load the tree sitter web assembly
   const runtimeBytes = await loadWasm('tree-sitter.wasm');
-  await Parser.init({ wasmBinary: runtimeBytes } as object);
+  await Parser.init({ wasmBinary: runtimeBytes });
 
   // Load the specific language parser
   const grammarKey = LANGUAGE_ID_TO_GRAMMAR[languageId];

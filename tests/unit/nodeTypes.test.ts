@@ -1,5 +1,5 @@
 import { assert, describe, expect, it } from 'vitest';
-import type { SyntaxNode } from '../../src/parseSource';
+import type { SyntaxNode, Tree } from '../../src/parseSource';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseSource } from '../../src/parseSource';
@@ -12,30 +12,25 @@ const TYPESCRIPT_STRING = 'const x = "Hello World!"';
 function walkToNodeType(node: SyntaxNode, targetNodeType: string): SyntaxNode | undefined {
     if (node.type === targetNodeType) return node;
 
-    if (!node.childCount) {
-        return undefined;
+    for (const child of node.children) {
+        if (!child) continue;
+
+        const found = walkToNodeType(child, targetNodeType);
+        if (found) return found;
     }
 
-    const cursor = node.walk();
-    cursor.gotoFirstChild();
-    let foundNode = walkToNodeType(cursor.currentNode, targetNodeType);
-    while (!foundNode && cursor.gotoNextSibling()) {
-        foundNode = walkToNodeType(cursor.currentNode, targetNodeType);
-    }
-
-    return foundNode;
+    return undefined;
 }
 
-describe('Note Types', () => {
-    it('should be able to get type descriptor for typescript array', async () => {
-        const tree = await parseSource(TYPESCRIPT_ARRAY, 'typescript', async (filename: string) => {
+describe('Node Types', () => {
+    async function getTypescriptTree(source: string): Promise<Tree> {
+        return await parseSource(source, 'typescript', async (filename: string) => {
             return readFileSync(join(__dirname, '../../wasm', filename));
         });
+    }
 
-        if (!tree) {
-            assert.fail('Unable to parse tree');
-        }
-
+    it('should be able to get type descriptor for typescript array', async () => {
+        const tree = await getTypescriptTree(TYPESCRIPT_ARRAY);
         const arrayNode = walkToNodeType(tree.rootNode, 'array');
 
         if (!arrayNode) {
@@ -47,16 +42,11 @@ describe('Note Types', () => {
         expect(descriptorFor(arrayNode)?.openToken).toBe('[');
         expect(descriptorFor(arrayNode)?.closeToken).toBe(']');
         expect(descriptorFor(arrayNode)?.separator).toBe(',');
+        expect(descriptorFor(arrayNode)?.bracketSpacing).toBe(false);
+        expect(descriptorFor(arrayNode)?.elementsField).toEqual({ kind: 'named-children' });
     });
     it('should be able to get type descriptor for typescript object', async () => {
-        const tree = await parseSource(TYPESCRIPT_OBJECT, 'typescript', async (filename: string) => {
-            return readFileSync(join(__dirname, '../../wasm', filename));
-        });
-
-        if (!tree) {
-            assert.fail('Unable to parse tree');
-        }
-
+        const tree = await getTypescriptTree(TYPESCRIPT_OBJECT);
         const objectNode = walkToNodeType(tree.rootNode, 'object');
 
         if (!objectNode) {
@@ -68,16 +58,11 @@ describe('Note Types', () => {
         expect(descriptorFor(objectNode)?.openToken).toBe('{');
         expect(descriptorFor(objectNode)?.closeToken).toBe('}');
         expect(descriptorFor(objectNode)?.separator).toBe(',');
+        expect(descriptorFor(objectNode)?.bracketSpacing).toBe(true);
+        expect(descriptorFor(objectNode)?.elementsField).toEqual({ kind: 'named-children' });
     });
-    it('should be not able to get type descriptor for typescript string', async () => {
-        const tree = await parseSource(TYPESCRIPT_STRING, 'typescript', async (filename: string) => {
-            return readFileSync(join(__dirname, '../../wasm', filename));
-        });
-
-        if (!tree) {
-            assert.fail('Unable to parse tree');
-        }
-
+    it('should not be able to get type descriptor for typescript string', async () => {
+        const tree = await getTypescriptTree(TYPESCRIPT_STRING);
         const stringNode = walkToNodeType(tree.rootNode, 'string');
 
         if (!stringNode) {
