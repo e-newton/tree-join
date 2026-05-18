@@ -10,67 +10,66 @@ const TYPESCRIPT_OBJECT = 'const x = {a:1}';
 const TYPESCRIPT_STRING = 'const x = "Hello World!"';
 
 function walkToNodeType(node: SyntaxNode, targetNodeType: string): SyntaxNode | undefined {
-    if (node.type === targetNodeType) return node;
+  if (node.type === targetNodeType) return node;
 
-    for (const child of node.children) {
-        if (!child) continue;
+  for (const child of node.children) {
+    if (!child) continue;
 
-        const found = walkToNodeType(child, targetNodeType);
-        if (found) return found;
-    }
+    const found = walkToNodeType(child, targetNodeType);
+    if (found) return found;
+  }
 
-    return undefined;
+  return undefined;
 }
 
 describe('Node Types', () => {
-    async function getTypescriptTree(source: string): Promise<Tree> {
-        return await parseSource(source, 'typescript', async (filename: string) => {
-            return readFileSync(join(__dirname, '../../wasm', filename));
-        });
+  async function getTypescriptTree(source: string): Promise<Tree> {
+    return await parseSource(source, 'typescript', async (filename: string) => {
+      return readFileSync(join(__dirname, '../../wasm', filename));
+    });
+  }
+
+  it('should be able to get type descriptor for typescript array', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_ARRAY);
+    const arrayNode = walkToNodeType(tree.rootNode, 'array');
+
+    if (!arrayNode) {
+      assert.fail('Unable to find array node');
     }
 
-    it('should be able to get type descriptor for typescript array', async () => {
-        const tree = await getTypescriptTree(TYPESCRIPT_ARRAY);
-        const arrayNode = walkToNodeType(tree.rootNode, 'array');
+    expect(isSupported(arrayNode)).toBe(true);
+    expect(descriptorFor(arrayNode)).toBeDefined();
+    expect(descriptorFor(arrayNode)?.openToken).toBe('[');
+    expect(descriptorFor(arrayNode)?.closeToken).toBe(']');
+    expect(descriptorFor(arrayNode)?.separator).toBe(',');
+    expect(descriptorFor(arrayNode)?.bracketSpacing).toBe(false);
+    expect(descriptorFor(arrayNode)?.elementsField).toEqual({ kind: 'named-children' });
+  });
+  it('should be able to get type descriptor for typescript object', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_OBJECT);
+    const objectNode = walkToNodeType(tree.rootNode, 'object');
 
-        if (!arrayNode) {
-            assert.fail('Unable to find array node');
-        }
+    if (!objectNode) {
+      assert.fail('Unable to find object node');
+    }
 
-        expect(isSupported(arrayNode)).toBe(true);
-        expect(descriptorFor(arrayNode)).toBeDefined();
-        expect(descriptorFor(arrayNode)?.openToken).toBe('[');
-        expect(descriptorFor(arrayNode)?.closeToken).toBe(']');
-        expect(descriptorFor(arrayNode)?.separator).toBe(',');
-        expect(descriptorFor(arrayNode)?.bracketSpacing).toBe(false);
-        expect(descriptorFor(arrayNode)?.elementsField).toEqual({ kind: 'named-children' });
-    });
-    it('should be able to get type descriptor for typescript object', async () => {
-        const tree = await getTypescriptTree(TYPESCRIPT_OBJECT);
-        const objectNode = walkToNodeType(tree.rootNode, 'object');
+    expect(isSupported(objectNode)).toBe(true);
+    expect(descriptorFor(objectNode)).toBeDefined();
+    expect(descriptorFor(objectNode)?.openToken).toBe('{');
+    expect(descriptorFor(objectNode)?.closeToken).toBe('}');
+    expect(descriptorFor(objectNode)?.separator).toBe(',');
+    expect(descriptorFor(objectNode)?.bracketSpacing).toBe(true);
+    expect(descriptorFor(objectNode)?.elementsField).toEqual({ kind: 'named-children' });
+  });
+  it('should not be able to get type descriptor for typescript string', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_STRING);
+    const stringNode = walkToNodeType(tree.rootNode, 'string');
 
-        if (!objectNode) {
-            assert.fail('Unable to find object node');
-        }
+    if (!stringNode) {
+      assert.fail('Unable to find string node');
+    }
 
-        expect(isSupported(objectNode)).toBe(true);
-        expect(descriptorFor(objectNode)).toBeDefined();
-        expect(descriptorFor(objectNode)?.openToken).toBe('{');
-        expect(descriptorFor(objectNode)?.closeToken).toBe('}');
-        expect(descriptorFor(objectNode)?.separator).toBe(',');
-        expect(descriptorFor(objectNode)?.bracketSpacing).toBe(true);
-        expect(descriptorFor(objectNode)?.elementsField).toEqual({ kind: 'named-children' });
-    });
-    it('should not be able to get type descriptor for typescript string', async () => {
-        const tree = await getTypescriptTree(TYPESCRIPT_STRING);
-        const stringNode = walkToNodeType(tree.rootNode, 'string');
-
-        if (!stringNode) {
-            assert.fail('Unable to find string node');
-        }
-
-        expect(isSupported(stringNode)).toBe(false);
-        expect(descriptorFor(stringNode)).toBeUndefined();
-
-    });
+    expect(isSupported(stringNode)).toBe(false);
+    expect(descriptorFor(stringNode)).toBeUndefined();
+  });
 });

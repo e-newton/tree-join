@@ -19,7 +19,7 @@ export const GRAMMAR_FILE: Record<GrammarKey, string> = {
 export async function parseSource(
   source: string,
   languageId: string,
-  loadWasm: (filename: string) => Promise<Uint8Array>
+  loadWasm: (filename: string) => Promise<Uint8Array>,
 ): Promise<import('web-tree-sitter').Tree> {
   // Load the tree sitter web assembly
   const runtimeBytes = await loadWasm('tree-sitter.wasm');
