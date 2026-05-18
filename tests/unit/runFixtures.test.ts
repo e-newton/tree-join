@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { parseSource, SyntaxNode, Tree } from '../../src/parseSource';
 import { splitNode, SplitOptions } from '../../src/split';
+import { joinNode, JoinOptions } from '../../src/join';
 import { runFixtures } from '../runFixtures';
 import { join } from 'node:path';
 import { isSupported } from '../../src/nodeTypes';
@@ -37,6 +38,25 @@ async function runSplit(input: string, opts: Partial<SplitOptions> | undefined):
   return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
 }
 
+const DEFAULT_JOIN_OPTIONS: JoinOptions = {};
+
+async function runJoin(input: string, opts: Partial<JoinOptions> | undefined): Promise<string> {
+  const tree = await getTypescriptTree(input);
+  const node = findFirstSupported(tree.rootNode);
+
+  if (!node) throw Error('Cannot find supported node');
+
+  const resolved: JoinOptions = { ...DEFAULT_JOIN_OPTIONS, ...(opts ?? {}) };
+  const result = joinNode(node, input, resolved);
+
+  if ('refused' in result) {
+    return `// REFUSED: ${result.refused}`;
+  }
+
+  const { newText, range } = result;
+  return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
+}
+
 runFixtures(new URL('../fixtures/sample', import.meta.url), async (input) => input);
 runFixtures<Partial<SplitOptions>>(
   new URL('../fixtures/split/literals', import.meta.url),
@@ -45,4 +65,13 @@ runFixtures<Partial<SplitOptions>>(
 runFixtures<Partial<SplitOptions>>(
   new URL('../fixtures/split/literals-tabs', import.meta.url),
   (input, opts) => runSplit(input, { insertSpaces: false, ...(opts ?? {}) }),
+);
+runFixtures<Partial<JoinOptions>>(new URL('../fixtures/join/literals', import.meta.url), runJoin);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/literals-refused-line-comment', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/literals-refused-width', import.meta.url),
+  runJoin,
 );
