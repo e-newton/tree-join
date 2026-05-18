@@ -1,4 +1,4 @@
-import { descriptorFor } from './nodeTypes';
+import { descriptorFor, NodeTypeDescriptor } from './nodeTypes';
 import { Point, SyntaxNode } from './parseSource';
 
 export type SplitOptions = {
@@ -13,98 +13,136 @@ type Range = {
   endIndex: number;
 };
 
+type Run = {
+  nodes: SyntaxNode[];
+  hasSeparator: boolean;
+};
+
 export function splitNode(
   node: SyntaxNode,
   source: string,
   opts: SplitOptions,
 ): { newText: string; range: Range } {
-  const range: Range = {
-    start: node.startPosition,
-    startIndex: node.startIndex,
-    end: node.endPosition,
-    endIndex: node.endIndex,
-  }; // Only applies to literals right now
   const descriptor = descriptorFor(node);
 
   if (!descriptor) {
     throw new Error('Unable to split: node not supported');
   }
 
-  const sourceByLine = source.split('\n');
-  const nodeStartRow = sourceByLine[node.startPosition.row];
-  const nodeEndRow = sourceByLine[node.endPosition.row];
+  const range: Range = {
+    start: node.startPosition,
+    startIndex: node.startIndex,
+    end: node.endPosition,
+    endIndex: node.endIndex,
+  }; // Only applies to literals right now
 
-  if (!nodeStartRow) {
-    throw new Error('Unable to split: Cannot find node start position');
+  const lineStart = node.startIndex - node.startPosition.column;
+  const baseIndent = source.slice(lineStart, node.startIndex).match(/^\s*/)?.[0] ?? '';
+
+  const childIndentTabString = baseIndent + (opts.insertSpaces ? ' '.repeat(opts.tabSize) : '\t');
+
+  const elementRuns = getAllElementRuns(node, descriptor);
+
+  if (elementRuns.length === 0) {
+    return {
+      newText: node.text,
+      range,
+    };
   }
 
-  if (!nodeEndRow) {
-    throw new Error('Unable to split: Cannot find node end position');
-  }
+  const elementStrings = createElementStrings(
+    elementRuns,
+    descriptor,
+    source,
+    childIndentTabString,
+  );
 
-  const whiteSpaceBeforeCharacter = nodeStartRow.match(/\s*/)?.[0] ?? '';
-  const childIndentTabString =
-    whiteSpaceBeforeCharacter + (opts.insertSpaces ? ' '.repeat(opts.tabSize) : '\t');
+  const body = elementStrings.join('\n');
+  const paddedEnd = baseIndent + descriptor.closeToken;
+  const finalString = descriptor.openToken + '\n' + body + '\n' + paddedEnd;
 
-  const elements: SyntaxNode[][] = [];
+  return { newText: finalString, range };
+}
+
+function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[] {
+  const runs: Run[] = [];
 
   let seenOpenToken = false;
+  let pendingTrailingComment = false;
+  let lastPushedToken: SyntaxNode | null = null;
 
-  let elementRun = [];
+  let currentRun: Run = {
+    nodes: [],
+    hasSeparator: false,
+  };
+
   for (const childNode of node.children) {
     if (!childNode) continue;
 
     if (!seenOpenToken) {
-      if (childNode.text === descriptor.openToken) {
+      if (childNode.type === descriptor.openToken) {
         seenOpenToken = true;
       }
       continue;
     }
 
-    if (childNode.text === descriptor.closeToken) {
-      elements.push(elementRun);
+    if (childNode.type === descriptor.closeToken) {
+      if (currentRun.nodes.length) {
+        runs.push(currentRun);
+      }
       break;
     }
 
-    if (childNode.text === descriptor.separator) {
-      elementRun.push(childNode);
-
-      if (childNode.nextNamedSibling?.type === 'comment') {
-        elementRun.push(childNode.nextNamedSibling);
+    if (childNode.type === descriptor.separator) {
+      if (currentRun.nodes.length) {
+        pendingTrailingComment = true;
+        runs.push(currentRun);
       }
-
-      elements.push(elementRun);
-      elementRun = [];
+      currentRun = {
+        nodes: [],
+        hasSeparator: false,
+      };
       continue;
     }
 
-    const lastRun = elements.at(-1);
-    if (lastRun && lastRun.find((aNode) => aNode.equals(childNode))) {
+    const lastRun = runs.at(-1);
+    if (
+      lastRun &&
+      pendingTrailingComment &&
+      lastPushedToken &&
+      childNode.type === 'comment' &&
+      childNode.startPosition.row === lastPushedToken.endPosition.row
+    ) {
+      lastRun.hasSeparator = true;
+      lastRun.nodes.push(childNode);
+      pendingTrailingComment = false;
       continue;
     }
 
-    elementRun.push(childNode);
+    pendingTrailingComment = false;
+    currentRun.nodes.push(childNode);
+    lastPushedToken = childNode;
   }
 
-  const elementStrings = elements
-    .filter((run) => !!run.length)
-    .map((run) => {
-      const firstIndex = run.at(0)?.startIndex ?? 0;
-      const lastIndex = run.at(-1)?.endIndex ?? 0;
+  return runs;
+}
 
-      return childIndentTabString + source.slice(firstIndex, lastIndex);
-    });
+function createElementStrings(
+  runs: Run[],
+  descriptor: NodeTypeDescriptor,
+  source: string,
+  childIndentTabString: string,
+) {
+  const elementStrings = runs.map((run) => {
+    const firstIndex = run.nodes.at(0)?.startIndex ?? 0;
+    const lastIndex = run.nodes.at(-1)?.endIndex ?? 0;
 
-  let lastElement = elementStrings.at(-1);
-  if (lastElement && !lastElement.endsWith(descriptor.separator)) {
-    lastElement += descriptor.separator;
-    elementStrings.pop();
-    elementStrings.push(lastElement);
-  }
+    return (
+      childIndentTabString +
+      source.slice(firstIndex, lastIndex) +
+      (run.hasSeparator ? '' : descriptor.separator)
+    );
+  });
 
-  const body = elementStrings.join('\n');
-  const paddedEnd = whiteSpaceBeforeCharacter + descriptor.closeToken;
-  const finalString = descriptor.openToken + '\n' + body + '\n' + paddedEnd;
-
-  return { newText: finalString, range };
+  return elementStrings;
 }
