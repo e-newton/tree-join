@@ -87,6 +87,7 @@ export function joinNode(
     ) {
       lastRun.nodes.push(childNode);
       pendingTrailingComment = false;
+      continue;
     }
 
     pendingTrailingComment = false;
@@ -111,7 +112,8 @@ export function joinNode(
 
   if (opts.maxJoinLength !== undefined) {
     const startText = source.slice(node.startIndex - node.startPosition.column, node.startIndex);
-    const endText = source.slice(node.endIndex, source.indexOf('\n', node.endIndex));
+    const nlIdx = source.indexOf('\n', node.endIndex);
+    const endText = source.slice(node.endIndex, nlIdx === -1 ? source.length : nlIdx);
     if ((startText + newText + endText).length > opts.maxJoinLength) {
       return {
         refused: 'width',
