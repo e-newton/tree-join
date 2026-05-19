@@ -1,15 +1,11 @@
-import { descriptorFor, NodeTypeDescriptor } from './nodeTypes';
+import { descriptorFor, getChildren, getOpeningToken, NodeTypeDescriptor } from './nodeTypes';
 import { SyntaxNode } from './parseSource';
+import { groupIntoRuns, Run } from './runs';
 import { ElementOffsets, Range, TransformSuccess } from './types';
 
 export type SplitOptions = {
   tabSize: number;
   insertSpaces: boolean;
-};
-
-type Run = {
-  nodes: SyntaxNode[];
-  hasSeparator: boolean;
 };
 
 export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions): TransformSuccess {
@@ -31,7 +27,7 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
 
   const childIndentTabString = baseIndent + (opts.insertSpaces ? ' '.repeat(opts.tabSize) : '\t');
 
-  const elementRuns = getAllElementRuns(node, descriptor);
+  const elementRuns = getElementRuns(node, descriptor);
 
   if (elementRuns.length === 0) {
     return {
@@ -57,63 +53,14 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
   return { newText: finalString, range, elements };
 }
 
-function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[] {
-  const runs: Run[] = [];
-
-  let seenOpenToken = false;
-  let expectingElement = true;
-  let pendingTrailingComment = false;
-  let lastPushedToken: SyntaxNode | null = null;
-
-  let currentRun: Run = {
-    nodes: [],
-    hasSeparator: false,
-  };
-
+function getElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[] {
   const children = getChildren(node, descriptor);
 
   if (descriptor.elementsField.kind === 'jsx-element-children') {
     return children.map((childNode) => ({ nodes: [childNode], hasSeparator: true }));
   }
 
-  for (const childNode of children) {
-    if (childNode.type === descriptor.separator) {
-      if (expectingElement) {
-        runs.push({ nodes: [], hasSeparator: false });
-      } else {
-        pendingTrailingComment = true;
-        runs.push(currentRun);
-        currentRun = { nodes: [], hasSeparator: false };
-        expectingElement = true;
-      }
-      continue;
-    }
-
-    const lastRun = runs.at(-1);
-    if (
-      lastRun &&
-      pendingTrailingComment &&
-      lastPushedToken &&
-      childNode.type === 'comment' &&
-      childNode.startPosition.row === lastPushedToken.endPosition.row
-    ) {
-      lastRun.hasSeparator = true;
-      lastRun.nodes.push(childNode);
-      pendingTrailingComment = false;
-      continue;
-    }
-
-    pendingTrailingComment = false;
-    currentRun.nodes.push(childNode);
-    expectingElement = false;
-    lastPushedToken = childNode;
-  }
-
-  if (currentRun.nodes.length) {
-    runs.push(currentRun);
-  }
-
-  return runs;
+  return groupIntoRuns(children, descriptor);
 }
 
 function buildElements(
@@ -150,38 +97,4 @@ function buildElements(
   }
 
   return { strings, elements };
-}
-
-function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
-  if (descriptor.elementsField.kind === 'named-children') {
-    return descriptor.openToken;
-  }
-
-  if (descriptor.elementsField.kind === 'jsx-element-children') {
-    const openingToken = descriptor.openToken;
-    const identifier = node.namedChildren.find(
-      (c) => !!c && ['identifier', 'member_expression', 'jsx_namespace_name'].includes(c.type),
-    );
-    return openingToken + identifier?.text;
-  }
-}
-
-function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {
-  if (descriptor.elementsField.kind === 'named-children') {
-    return node.children.filter(
-      (childNode): childNode is SyntaxNode =>
-        !!childNode && (childNode.isNamed || childNode.type === descriptor.separator),
-    );
-  }
-
-  if (descriptor.elementsField.kind === 'jsx-element-children') {
-    return node.children.filter(
-      (childNode): childNode is SyntaxNode =>
-        !!childNode &&
-        (['jsx_attribute', 'jsx_expression'].includes(childNode.type) ||
-          childNode.type === descriptor.separator),
-    );
-  }
-
-  return [];
 }
