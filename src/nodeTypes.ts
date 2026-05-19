@@ -1,9 +1,11 @@
 import { SyntaxNode } from './parseSource';
 
-type ElementsSource = { kind: 'named-children' };
+type SourceType = 'named-children' | 'jsx-element-children';
+
+type ElementsSource = { kind: SourceType };
 
 export interface NodeTypeDescriptor {
-  type: string;
+  type: SupportedNodeTypes;
   openToken: string;
   closeToken: string;
   separator: string;
@@ -17,7 +19,11 @@ type SupportedNodeTypes =
   | 'arguments'
   | 'formal_parameters'
   | 'array_pattern'
-  | 'object_pattern';
+  | 'object_pattern'
+  | 'named_imports'
+  | 'export_clause'
+  | 'jsx_opening_element'
+  | 'jsx_self_closing_element';
 type SupportedSyntaxNode = SyntaxNode & { type: SupportedNodeTypes };
 
 export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
@@ -69,6 +75,38 @@ export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
     bracketSpacing: true,
     elementsField: { kind: 'named-children' },
   },
+  named_imports: {
+    type: 'named_imports',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+  export_clause: {
+    type: 'export_clause',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+  jsx_opening_element: {
+    type: 'jsx_opening_element',
+    openToken: '<',
+    closeToken: '>',
+    separator: ' ',
+    bracketSpacing: true,
+    elementsField: { kind: 'jsx-element-children' },
+  },
+  jsx_self_closing_element: {
+    type: 'jsx_self_closing_element',
+    openToken: '<',
+    closeToken: '/>',
+    separator: ' ',
+    bracketSpacing: true,
+    elementsField: { kind: 'jsx-element-children' },
+  },
 } as const;
 
 export function isSupported(node: SyntaxNode): node is SupportedSyntaxNode {
@@ -81,4 +119,47 @@ export function descriptorFor(node: SyntaxNode): NodeTypeDescriptor | undefined 
   }
 
   return undefined;
+}
+
+export function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
+  if (descriptor.elementsField.kind === 'named-children') {
+    return descriptor.openToken;
+  }
+
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    const identifier = node.namedChildren.find(
+      (c) => !!c && ['identifier', 'member_expression', 'jsx_namespace_name'].includes(c.type),
+    );
+    if (!identifier) {
+      throw new Error(`JSX element ${node.type} has no tag identifier`);
+    }
+    return descriptor.openToken + identifier.text;
+  }
+
+  return '';
+}
+
+export function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {
+  if (descriptor.elementsField.kind === 'named-children') {
+    return node.children.filter(
+      (childNode): childNode is SyntaxNode =>
+        !!childNode && (childNode.isNamed || childNode.type === descriptor.separator),
+    );
+  }
+
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    return node.children.filter(
+      (childNode): childNode is SyntaxNode =>
+        !!childNode &&
+        ![
+          'identifier',
+          'member_expression',
+          'jsx_namespace_name',
+          descriptor.openToken,
+          descriptor.closeToken,
+        ].includes(childNode.type),
+    );
+  }
+
+  return [];
 }

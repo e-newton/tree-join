@@ -1,15 +1,11 @@
-import { descriptorFor, NodeTypeDescriptor } from './nodeTypes';
+import { descriptorFor, getChildren, getOpeningToken, NodeTypeDescriptor } from './nodeTypes';
 import { SyntaxNode } from './parseSource';
+import { groupIntoRuns, Run } from './runs';
 import { ElementOffsets, Range, TransformSuccess } from './types';
 
 export type SplitOptions = {
   tabSize: number;
   insertSpaces: boolean;
-};
-
-type Run = {
-  nodes: SyntaxNode[];
-  hasSeparator: boolean;
 };
 
 export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions): TransformSuccess {
@@ -31,7 +27,7 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
 
   const childIndentTabString = baseIndent + (opts.insertSpaces ? ' '.repeat(opts.tabSize) : '\t');
 
-  const elementRuns = getAllElementRuns(node, descriptor);
+  const elementRuns = getElementRuns(node, descriptor);
 
   if (elementRuns.length === 0) {
     return {
@@ -52,74 +48,19 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
 
   const body = strings.join('\n');
   const paddedEnd = baseIndent + descriptor.closeToken;
-  const finalString = descriptor.openToken + '\n' + body + '\n' + paddedEnd;
+  const finalString = getOpeningToken(node, descriptor) + '\n' + body + '\n' + paddedEnd;
 
   return { newText: finalString, range, elements };
 }
 
-function getAllElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[] {
-  const runs: Run[] = [];
+function getElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[] {
+  const children = getChildren(node, descriptor);
 
-  let seenOpenToken = false;
-  let expectingElement = true;
-  let pendingTrailingComment = false;
-  let lastPushedToken: SyntaxNode | null = null;
-
-  let currentRun: Run = {
-    nodes: [],
-    hasSeparator: false,
-  };
-
-  for (const childNode of node.children) {
-    if (!childNode) continue;
-
-    if (!seenOpenToken) {
-      if (childNode.type === descriptor.openToken) {
-        seenOpenToken = true;
-      }
-      continue;
-    }
-
-    if (childNode.type === descriptor.closeToken) {
-      if (!expectingElement) {
-        runs.push(currentRun);
-      }
-      break;
-    }
-
-    if (childNode.type === descriptor.separator) {
-      if (expectingElement) {
-        runs.push({ nodes: [], hasSeparator: false });
-      } else {
-        pendingTrailingComment = true;
-        runs.push(currentRun);
-        currentRun = { nodes: [], hasSeparator: false };
-        expectingElement = true;
-      }
-      continue;
-    }
-
-    const lastRun = runs.at(-1);
-    if (
-      lastRun &&
-      pendingTrailingComment &&
-      lastPushedToken &&
-      childNode.type === 'comment' &&
-      childNode.startPosition.row === lastPushedToken.endPosition.row
-    ) {
-      lastRun.hasSeparator = true;
-      lastRun.nodes.push(childNode);
-      pendingTrailingComment = false;
-      continue;
-    }
-
-    pendingTrailingComment = false;
-    currentRun.nodes.push(childNode);
-    expectingElement = false;
-    lastPushedToken = childNode;
+  if (descriptor.elementsField.kind === 'jsx-element-children') {
+    return children.map((childNode) => ({ nodes: [childNode], hasSeparator: true }));
   }
 
-  return runs;
+  return groupIntoRuns(children, descriptor);
 }
 
 function buildElements(
