@@ -3,7 +3,7 @@ import type { SyntaxNode, Tree } from '../../src/parseSource';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseSource } from '../../src/parseSource';
-import { descriptorFor, isSupported } from '../../src/nodeTypes';
+import { descriptorFor, isSupported, resolveSeparator, separatorsFor } from '../../src/nodeTypes';
 
 const TYPESCRIPT_ARRAY = 'const x = [1, 2, 3]';
 const TYPESCRIPT_OBJECT = 'const x = {a:1}';
@@ -12,6 +12,9 @@ const TYPESCRIPT_ARGUMENTS = 'foo(1, 2, 3)';
 const TYPESCRIPT_FORMAL_PARAMETERS = 'function f(a, b) {}';
 const TYPESCRIPT_ARRAY_PATTERN = 'const [a, b] = xs';
 const TYPESCRIPT_OBJECT_PATTERN = 'const { a, b } = obj';
+const TYPESCRIPT_TYPE_ARGUMENTS = 'const x: Foo<A, B> = bar';
+const TYPESCRIPT_TYPE_PARAMETERS = 'function foo<T, U>() {}';
+const TYPESCRIPT_TUPLE_TYPE = 'type X = [a: string, b: number]';
 
 function walkToNodeType(node: SyntaxNode, targetNodeType: string): SyntaxNode | undefined {
   if (node.type === targetNodeType) return node;
@@ -139,5 +142,93 @@ describe('Node Types', () => {
     expect(descriptorFor(objectPatternNode)?.separator).toBe(',');
     expect(descriptorFor(objectPatternNode)?.bracketSpacing).toBe(true);
     expect(descriptorFor(objectPatternNode)?.elementsField).toEqual({ kind: 'named-children' });
+  });
+
+  it('should get a tuple_type descriptor with array-like brackets', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_TUPLE_TYPE);
+    const node = walkToNodeType(tree.rootNode, 'tuple_type');
+    if (!node) assert.fail('Unable to find tuple_type node');
+
+    expect(isSupported(node)).toBe(true);
+    const d = descriptorFor(node);
+    expect(d?.openToken).toBe('[');
+    expect(d?.closeToken).toBe(']');
+    expect(d?.separator).toBe(',');
+    expect(d?.bracketSpacing).toBe(false);
+  });
+
+  it('should get a type_arguments descriptor with angle brackets', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_TYPE_ARGUMENTS);
+    const node = walkToNodeType(tree.rootNode, 'type_arguments');
+    if (!node) assert.fail('Unable to find type_arguments node');
+
+    expect(isSupported(node)).toBe(true);
+    const d = descriptorFor(node);
+    expect(d?.openToken).toBe('<');
+    expect(d?.closeToken).toBe('>');
+    expect(d?.separator).toBe(',');
+    expect(d?.bracketSpacing).toBe(false);
+  });
+
+  it('should get a type_parameters descriptor with angle brackets', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_TYPE_PARAMETERS);
+    const node = walkToNodeType(tree.rootNode, 'type_parameters');
+    if (!node) assert.fail('Unable to find type_parameters node');
+
+    expect(isSupported(node)).toBe(true);
+    const d = descriptorFor(node);
+    expect(d?.openToken).toBe('<');
+    expect(d?.closeToken).toBe('>');
+    expect(d?.bracketSpacing).toBe(false);
+  });
+
+  it('should get an object_type descriptor that accepts , and ; separators', async () => {
+    const tree = await getTypescriptTree('type X = { a: string; b: number }');
+    const node = walkToNodeType(tree.rootNode, 'object_type');
+    if (!node) assert.fail('Unable to find object_type node');
+
+    expect(isSupported(node)).toBe(true);
+    const d = descriptorFor(node);
+    expect(d?.openToken).toBe('{');
+    expect(d?.closeToken).toBe('}');
+    expect(d?.bracketSpacing).toBe(true);
+    expect(d?.separator).toBe(';');
+    expect(separatorsFor(d!)).toEqual([';', ',']);
+  });
+
+  it('separatorsFor falls back to [separator] when separators is unset', async () => {
+    const tree = await getTypescriptTree(TYPESCRIPT_ARRAY);
+    const node = walkToNodeType(tree.rootNode, 'array');
+    if (!node) assert.fail('Unable to find array node');
+    expect(separatorsFor(descriptorFor(node)!)).toEqual([',']);
+  });
+
+  describe('resolveSeparator (object_type)', () => {
+    async function objectTypeNode(source: string): Promise<SyntaxNode> {
+      const tree = await getTypescriptTree(source);
+      const node = walkToNodeType(tree.rootNode, 'object_type');
+      if (!node) assert.fail('Unable to find object_type node');
+      return node;
+    }
+
+    it('preserves an existing semicolon', async () => {
+      const node = await objectTypeNode('type X = { a: string; b: number }');
+      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(';');
+    });
+
+    it('preserves an existing comma', async () => {
+      const node = await objectTypeNode('type X = { a: string, b: number }');
+      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(',');
+    });
+
+    it('uses the first separator for a mixed node', async () => {
+      const node = await objectTypeNode('type X = { a: string, b: number; c: boolean }');
+      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(',');
+    });
+
+    it('defaults to ; when no separator is present', async () => {
+      const node = await objectTypeNode('type X = { a: string }');
+      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(';');
+    });
   });
 });
