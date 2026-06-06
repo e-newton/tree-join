@@ -1,7 +1,16 @@
 import { readFileSync } from 'node:fs';
-import { parseSource, SyntaxNode, Tree } from '../../src/parseSource';
+import { Language, Parser } from 'web-tree-sitter';
+import {
+  GRAMMAR_FILE,
+  GrammarKey,
+  LANGUAGE_ID_TO_GRAMMAR,
+  parseSource,
+  SyntaxNode,
+  Tree,
+} from '../../src/parseSource';
 import { splitNode, SplitOptions } from '../../src/split';
 import { joinNode, JoinOptions } from '../../src/join';
+import { joinRecursive, Reparse, splitRecursive } from '../../src/recursive';
 import { runFixtures } from '../runFixtures';
 import { join } from 'node:path';
 import { isSupported } from '../../src/nodeTypes';
@@ -10,6 +19,43 @@ async function getTree(source: string, languageId: string): Promise<Tree> {
   return await parseSource(source, languageId, async (filename: string) => {
     return readFileSync(join(__dirname, '../../wasm', filename));
   });
+}
+
+function readWasm(filename: string): Uint8Array {
+  return readFileSync(join(__dirname, '../../wasm', filename));
+}
+
+// A cached synchronous parser per grammar — the recursive transforms re-parse a
+// working string many times, so they need a sync parse() rather than the
+// wasm-reloading parseSource() helper.
+let runtime: Promise<void> | undefined;
+const parserCache = new Map<GrammarKey, Promise<Parser>>();
+
+async function loadParser(languageId: string): Promise<Parser> {
+  const grammar = LANGUAGE_ID_TO_GRAMMAR[languageId];
+  if (!grammar) throw new Error(`Unsupported Language: ${languageId}`);
+  let pending = parserCache.get(grammar);
+  if (!pending) {
+    pending = (async () => {
+      if (!runtime) runtime = Parser.init({ wasmBinary: readWasm('tree-sitter.wasm') });
+      await runtime;
+      const language = await Language.load(readWasm(GRAMMAR_FILE[grammar]));
+      const parser = new Parser();
+      parser.setLanguage(language);
+      return parser;
+    })();
+    parserCache.set(grammar, pending);
+  }
+  return pending;
+}
+
+async function reparserFor(languageId: string): Promise<Reparse> {
+  const parser = await loadParser(languageId);
+  return (text: string) => {
+    const tree = parser.parse(text);
+    if (!tree) throw new Error('Parse Failed');
+    return tree;
+  };
 }
 
 function findFirstSupported(node: SyntaxNode): SyntaxNode | undefined {
@@ -221,3 +267,61 @@ for (const type of ['type_arguments', 'type_parameters', 'tuple_type', 'object_t
     runJoin,
   );
 }
+
+// --- T-13: Recursive variants ---
+async function runSplitRecursiveWith(
+  languageId: string,
+  input: string,
+  opts: Partial<SplitOptions> | undefined,
+): Promise<string> {
+  const reparse = await reparserFor(languageId);
+  const node = findFirstSupported(reparse(input).rootNode);
+  if (!node) throw Error('Cannot find supported node');
+
+  const resolved: SplitOptions = { ...DEFAULT_SPLIT_OPTIONS, ...(opts ?? {}) };
+  const { newText, range } = splitRecursive(node, input, resolved, reparse);
+  return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
+}
+
+async function runJoinRecursiveWith(
+  languageId: string,
+  input: string,
+  opts: Partial<JoinOptions> | undefined,
+): Promise<string> {
+  const reparse = await reparserFor(languageId);
+  const node = findFirstSupported(reparse(input).rootNode);
+  if (!node) throw Error('Cannot find supported node');
+
+  const result = joinRecursive(node, input, { ...(opts ?? {}) }, reparse);
+  if ('refused' in result) {
+    return `// REFUSED: ${result.refused}`;
+  }
+  const { newText, range } = result;
+  return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
+}
+
+const runSplitRecursive = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitRecursiveWith('typescript', input, opts);
+const runSplitRecursiveTsx = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitRecursiveWith('typescriptreact', input, opts);
+const runJoinRecursive = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinRecursiveWith('typescript', input, opts);
+const runJoinRecursiveTsx = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinRecursiveWith('typescriptreact', input, opts);
+
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-recursive', import.meta.url),
+  runSplitRecursive,
+);
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-recursive-tsx', import.meta.url),
+  runSplitRecursiveTsx,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-recursive', import.meta.url),
+  runJoinRecursive,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-recursive-tsx', import.meta.url),
+  runJoinRecursiveTsx,
+);
