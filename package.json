@@ -56,6 +56,14 @@
       {
         "command": "tree-join.split",
         "title": "Tree Join: Split"
+      },
+      {
+        "command": "tree-join.splitRecursive",
+        "title": "Tree Join: Split Recursive"
+      },
+      {
+        "command": "tree-join.joinRecursive",
+        "title": "Tree Join: Join Recursive"
       }
     ]
   },
