@@ -268,6 +268,26 @@ for (const type of ['type_arguments', 'type_parameters', 'tuple_type', 'object_t
   );
 }
 
+// --- T-14: Settings wiring ---
+for (const mode of ['add', 'preserve', 'never']) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split/trailing-comma-${mode}`, import.meta.url),
+    runSplit,
+  );
+}
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/bracket-spacing-on', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/bracket-spacing-off', import.meta.url),
+  runJoin,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join/max-join-length', import.meta.url),
+  runJoin,
+);
+
 // --- T-13: Recursive variants ---
 async function runSplitRecursiveWith(
   languageId: string,

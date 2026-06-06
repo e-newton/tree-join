@@ -4,6 +4,7 @@ import {
   getOpeningToken,
   NodeTypeDescriptor,
   resolveSeparator,
+  separatorsFor,
 } from './nodeTypes';
 import { SyntaxNode } from './parseSource';
 import { groupIntoRuns, Run } from './runs';
@@ -12,7 +13,28 @@ import { ElementOffsets, Range, TransformSuccess } from './types';
 export type SplitOptions = {
   tabSize: number;
   insertSpaces: boolean;
+  /** Trailing separator behavior on split. Undefined behaves like 'add'. */
+  trailingComma?: 'add' | 'preserve' | 'never';
 };
+
+/**
+ * Whether the last element should carry a trailing separator, per the
+ * `trailingComma` setting. `add` (default) always emits one, `never` never
+ * does, and `preserve` mirrors whether the source already had one. JSX
+ * (whitespace-separated) is exempt and decided by the per-run `hasSeparator`.
+ */
+function emitTrailingSeparator(
+  node: SyntaxNode,
+  descriptor: NodeTypeDescriptor,
+  mode: 'add' | 'preserve' | 'never',
+): boolean {
+  if (mode === 'add') return true;
+  if (mode === 'never') return false;
+  const separators = separatorsFor(descriptor);
+  const children = getChildren(node, descriptor);
+  const last = children.at(-1);
+  return !!last && separators.includes(last.type);
+}
 
 export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions): TransformSuccess {
   const descriptor = descriptorFor(node);
@@ -45,12 +67,14 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
 
   const firstElementOffsetInNewText = descriptor.openToken.length + 1; // openToken + '\n'
   const separator = resolveSeparator(node, descriptor);
+  const trailingSeparator = emitTrailingSeparator(node, descriptor, opts.trailingComma ?? 'add');
   const { strings, elements } = buildElements(
     elementRuns,
     separator,
     source,
     childIndentTabString,
     firstElementOffsetInNewText,
+    trailingSeparator,
   );
 
   const body = strings.join('\n');
@@ -76,17 +100,29 @@ function buildElements(
   source: string,
   childIndentTabString: string,
   firstElementOffsetInNewText: number,
+  trailingSeparator: boolean,
 ): { strings: string[]; elements: ElementOffsets[] } {
   const strings: string[] = [];
   const elements: ElementOffsets[] = [];
   let offset = firstElementOffsetInNewText;
 
-  for (const run of runs) {
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i];
+    if (!run) continue;
+    const isLast = i === runs.length - 1;
     const firstNode = run.nodes.at(0);
     const lastNode = run.nodes.at(-1);
     const content =
       firstNode && lastNode ? source.slice(firstNode.startIndex, lastNode.endIndex) : '';
-    const sep = run.hasSeparator ? '' : separator;
+    // A run ending in a line comment can never take a separator — it would land
+    // inside the `//` comment. Any pre-existing separator is already captured in
+    // the raw source slice above.
+    const endsWithLineComment =
+      !!lastNode && lastNode.type === 'comment' && lastNode.text.startsWith('//');
+    // Interior elements always take the separator; the last element follows the
+    // resolved trailingComma decision.
+    const wantSeparator = (isLast ? trailingSeparator : true) && !endsWithLineComment;
+    const sep = run.hasSeparator || !wantSeparator ? '' : separator;
     const line = childIndentTabString + content + sep;
 
     if (firstNode && lastNode) {
