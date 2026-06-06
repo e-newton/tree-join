@@ -2,12 +2,13 @@ import * as vscode from 'vscode';
 import { initParser, parserFor } from './parser';
 import { findTarget } from './select';
 import { toParserPoint } from './helpers';
-import { joinNode } from './join';
+import { joinNode, JoinOptions } from './join';
 import { applyTransforms } from './apply';
 import { JoinRefusal, TransformResult } from './types';
 import { splitNode, SplitOptions } from './split';
 import { joinRecursive, Reparse, splitRecursive } from './recursive';
 import { SyntaxNode } from './parseSource';
+import { joinOptionsFor, splitOptionsFor } from './config';
 
 type NoTarget = { kind: 'noTarget' };
 type CursorOutcome = TransformResult | NoTarget;
@@ -17,18 +18,11 @@ const REFUSAL_MESSAGES: Record<JoinRefusal['refused'], string> = {
   width: 'cannot join — exceeds max line length',
 };
 
-function resolveSplitOptions(editor: vscode.TextEditor): SplitOptions {
-  const { tabSize, insertSpaces } = editor.options;
-  return {
-    tabSize: typeof tabSize === 'number' ? tabSize : 2,
-    insertSpaces: typeof insertSpaces === 'boolean' ? insertSpaces : true,
-  };
-}
-
 type TransformPicker = (
   node: SyntaxNode,
   source: string,
   splitOpts: SplitOptions,
+  joinOpts: JoinOptions,
   parse: Reparse,
 ) => TransformResult;
 
@@ -76,7 +70,8 @@ async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void>
     return;
   }
   try {
-    const splitOpts = resolveSplitOptions(editor);
+    const splitOpts = splitOptionsFor(editor);
+    const joinOpts = joinOptionsFor(editor);
     const parse: Reparse = (text) => {
       const next = parser.parse(text);
       if (!next) throw new Error('tree-join: re-parse failed during recursive transform');
@@ -92,7 +87,7 @@ async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void>
       if (!node) {
         return { kind: 'noTarget' };
       }
-      return pick(node, source, splitOpts, parse);
+      return pick(node, source, splitOpts, joinOpts, parse);
     });
 
     const transforms = outcomes.filter((o): o is TransformResult => !('kind' in o));
@@ -119,25 +114,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tree-join.join', () =>
-      runOnCursors((node, source) => joinNode(node, source, {})),
+      runOnCursors((node, source, _splitOpts, joinOpts) => joinNode(node, source, joinOpts)),
     ),
     vscode.commands.registerCommand('tree-join.split', () =>
       runOnCursors((node, source, splitOpts) => splitNode(node, source, splitOpts)),
     ),
     vscode.commands.registerCommand('tree-join.toggle', () =>
-      runOnCursors((node, source, splitOpts) =>
-        node.text.includes('\n') ? joinNode(node, source, {}) : splitNode(node, source, splitOpts),
+      runOnCursors((node, source, splitOpts, joinOpts) =>
+        node.text.includes('\n')
+          ? joinNode(node, source, joinOpts)
+          : splitNode(node, source, splitOpts),
       ),
     ),
     vscode.commands.registerCommand('tree-join.splitRecursive', () =>
       runOnCursors(
-        (node, source, splitOpts, parse) => splitRecursive(node, source, splitOpts, parse),
+        (node, source, splitOpts, _joinOpts, parse) =>
+          splitRecursive(node, source, splitOpts, parse),
         true,
       ),
     ),
     vscode.commands.registerCommand('tree-join.joinRecursive', () =>
       runOnCursors(
-        (node, source, _splitOpts, parse) => joinRecursive(node, source, {}, parse),
+        (node, source, _splitOpts, joinOpts, parse) => joinRecursive(node, source, joinOpts, parse),
         true,
       ),
     ),

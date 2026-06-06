@@ -11,6 +11,12 @@ import { ElementOffsets, Range, TransformResult } from './types';
 
 export type JoinOptions = {
   maxJoinLength?: number;
+  /**
+   * Pad inside object-like braces on join. Undefined behaves like `true`.
+   * Only narrows the per-descriptor default: arrays/tuples/args are never
+   * padded regardless of this value (Prettier `bracketSpacing` semantics).
+   */
+  bracketSpacing?: boolean;
 };
 
 export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): TransformResult {
@@ -37,7 +43,7 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
     return { newText: node.text, range, elements: [] };
   }
 
-  const padding = descriptor.bracketSpacing ? ' ' : '';
+  const padding = descriptor.bracketSpacing && (opts.bracketSpacing ?? true) ? ' ' : '';
   const joiner = resolveSeparator(node, descriptor) + ' ';
   const elements: ElementOffsets[] = [];
   const contentParts: string[] = [];

@@ -44,6 +44,39 @@
     "virtualWorkspaces": true
   },
   "contributes": {
+    "configuration": {
+      "title": "Tree Join",
+      "properties": {
+        "tree-join.maxJoinLength": {
+          "type": "number",
+          "default": 100,
+          "scope": "language-overridable",
+          "markdownDescription": "Maximum line length for a join result; joins whose single-line result would exceed this are refused. Set to `0` to use the first `#editor.rulers#` column instead (falling back to 100 when no ruler is configured)."
+        },
+        "tree-join.trailingComma": {
+          "type": "string",
+          "enum": [
+            "add",
+            "preserve",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Always add a trailing separator after the last element on split.",
+            "Keep a trailing separator only if the source already had one.",
+            "Never add a trailing separator on split."
+          ],
+          "default": "add",
+          "scope": "language-overridable",
+          "markdownDescription": "Trailing comma (or separator) behavior on split. Join always removes trailing separators."
+        },
+        "tree-join.bracketSpacing": {
+          "type": "boolean",
+          "default": true,
+          "scope": "language-overridable",
+          "markdownDescription": "Pad inside object-like braces on join (`{ a: 1 }` vs `{a: 1}`). Arrays and other non-object constructs are never padded."
+        }
+      }
+    },
     "commands": [
       {
         "command": "tree-join.toggle",
