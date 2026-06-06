@@ -8,7 +8,13 @@ export interface NodeTypeDescriptor {
   type: SupportedNodeTypes;
   openToken: string;
   closeToken: string;
+  /** Canonical separator to emit when none can be detected in the node. */
   separator: string;
+  /**
+   * Tokens that count as element separators when grouping/matching children.
+   * Defaults to `[separator]`. `object_type` accepts both `;` and `,`.
+   */
+  separators?: string[];
   bracketSpacing: boolean;
   elementsField: ElementsSource;
 }
@@ -23,7 +29,11 @@ type SupportedNodeTypes =
   | 'named_imports'
   | 'export_clause'
   | 'jsx_opening_element'
-  | 'jsx_self_closing_element';
+  | 'jsx_self_closing_element'
+  | 'type_arguments'
+  | 'type_parameters'
+  | 'tuple_type'
+  | 'object_type';
 type SupportedSyntaxNode = SyntaxNode & { type: SupportedNodeTypes };
 
 export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
@@ -107,6 +117,39 @@ export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
     bracketSpacing: true,
     elementsField: { kind: 'jsx-element-children' },
   },
+  type_arguments: {
+    type: 'type_arguments',
+    openToken: '<',
+    closeToken: '>',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  type_parameters: {
+    type: 'type_parameters',
+    openToken: '<',
+    closeToken: '>',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  tuple_type: {
+    type: 'tuple_type',
+    openToken: '[',
+    closeToken: ']',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  object_type: {
+    type: 'object_type',
+    openToken: '{',
+    closeToken: '}',
+    separator: ';',
+    separators: [';', ','],
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
 } as const;
 
 export function isSupported(node: SyntaxNode): node is SupportedSyntaxNode {
@@ -119,6 +162,27 @@ export function descriptorFor(node: SyntaxNode): NodeTypeDescriptor | undefined 
   }
 
   return undefined;
+}
+
+/** Tokens that count as element separators for this node type. */
+export function separatorsFor(descriptor: NodeTypeDescriptor): string[] {
+  return descriptor.separators ?? [descriptor.separator];
+}
+
+/**
+ * The separator to emit for this node. Uses the first separator token actually
+ * present among the node's direct children (preserving the author's choice and
+ * normalizing a mixed node), falling back to the descriptor's canonical
+ * separator when none is present (e.g. a single-element or empty node).
+ */
+export function resolveSeparator(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
+  const accepted = separatorsFor(descriptor);
+  for (const child of node.children) {
+    if (child && accepted.includes(child.type)) {
+      return child.type;
+    }
+  }
+  return descriptor.separator;
 }
 
 export function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
@@ -141,9 +205,10 @@ export function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor
 
 export function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {
   if (descriptor.elementsField.kind === 'named-children') {
+    const separators = separatorsFor(descriptor);
     return node.children.filter(
       (childNode): childNode is SyntaxNode =>
-        !!childNode && (childNode.isNamed || childNode.type === descriptor.separator),
+        !!childNode && (childNode.isNamed || separators.includes(childNode.type)),
     );
   }
 

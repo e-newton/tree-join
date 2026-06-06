@@ -1,0 +1,4 @@
+type X = [
+  string,
+  number,
+];

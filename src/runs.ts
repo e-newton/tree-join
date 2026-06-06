@@ -1,4 +1,4 @@
-import { NodeTypeDescriptor } from './nodeTypes';
+import { NodeTypeDescriptor, separatorsFor } from './nodeTypes';
 import { SyntaxNode } from './parseSource';
 
 export type Run = {
@@ -8,6 +8,7 @@ export type Run = {
 
 export function groupIntoRuns(children: SyntaxNode[], descriptor: NodeTypeDescriptor): Run[] {
   const runs: Run[] = [];
+  const separators = separatorsFor(descriptor);
 
   let expectingElement = true;
   let attachTrailingCommentToPrev = false;
@@ -15,7 +16,7 @@ export function groupIntoRuns(children: SyntaxNode[], descriptor: NodeTypeDescri
   let currentRun: Run = { nodes: [], hasSeparator: false };
 
   for (const child of children) {
-    if (child.type === descriptor.separator) {
+    if (separators.includes(child.type)) {
       if (expectingElement) {
         runs.push({ nodes: [], hasSeparator: false });
       } else {

@@ -1,4 +1,10 @@
-import { descriptorFor, getChildren, getOpeningToken, NodeTypeDescriptor } from './nodeTypes';
+import {
+  descriptorFor,
+  getChildren,
+  getOpeningToken,
+  NodeTypeDescriptor,
+  resolveSeparator,
+} from './nodeTypes';
 import { SyntaxNode } from './parseSource';
 import { groupIntoRuns, Run } from './runs';
 import { ElementOffsets, Range, TransformSuccess } from './types';
@@ -38,9 +44,10 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
   }
 
   const firstElementOffsetInNewText = descriptor.openToken.length + 1; // openToken + '\n'
+  const separator = resolveSeparator(node, descriptor);
   const { strings, elements } = buildElements(
     elementRuns,
-    descriptor,
+    separator,
     source,
     childIndentTabString,
     firstElementOffsetInNewText,
@@ -65,7 +72,7 @@ function getElementRuns(node: SyntaxNode, descriptor: NodeTypeDescriptor): Run[]
 
 function buildElements(
   runs: Run[],
-  descriptor: NodeTypeDescriptor,
+  separator: string,
   source: string,
   childIndentTabString: string,
   firstElementOffsetInNewText: number,
@@ -79,7 +86,7 @@ function buildElements(
     const lastNode = run.nodes.at(-1);
     const content =
       firstNode && lastNode ? source.slice(firstNode.startIndex, lastNode.endIndex) : '';
-    const sep = run.hasSeparator ? '' : descriptor.separator;
+    const sep = run.hasSeparator ? '' : separator;
     const line = childIndentTabString + content + sep;
 
     if (firstNode && lastNode) {

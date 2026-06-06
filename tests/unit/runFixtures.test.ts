@@ -204,3 +204,20 @@ runFixtures<Partial<JoinOptions>>(
   new URL('../fixtures/join/jsx_attributes-refused-width', import.meta.url),
   runJoinTsx,
 );
+
+// --- T-12: TypeScript type nodes ---
+for (const type of ['type_arguments', 'type_parameters', 'tuple_type', 'object_type']) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split/${type}`, import.meta.url),
+    runSplit,
+  );
+  runFixtures<Partial<JoinOptions>>(new URL(`../fixtures/join/${type}`, import.meta.url), runJoin);
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join/${type}-refused-line-comment`, import.meta.url),
+    runJoin,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join/${type}-refused-width`, import.meta.url),
+    runJoin,
+  );
+}

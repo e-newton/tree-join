@@ -1,4 +1,10 @@
-import { descriptorFor, getChildren, getOpeningToken, NodeTypeDescriptor } from './nodeTypes';
+import {
+  descriptorFor,
+  getChildren,
+  getOpeningToken,
+  NodeTypeDescriptor,
+  resolveSeparator,
+} from './nodeTypes';
 import { SyntaxNode } from './parseSource';
 import { groupIntoRuns } from './runs';
 import { ElementOffsets, Range, TransformResult } from './types';
@@ -32,6 +38,7 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
   }
 
   const padding = descriptor.bracketSpacing ? ' ' : '';
+  const joiner = resolveSeparator(node, descriptor) + ' ';
   const elements: ElementOffsets[] = [];
   const contentParts: string[] = [];
   let offset = descriptor.openToken.length + padding.length;
@@ -54,10 +61,10 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
 
     contentParts.push(content);
     offset += content.length;
-    if (i < runs.length - 1) offset += 2; // ', '
+    if (i < runs.length - 1) offset += joiner.length;
   }
 
-  const body = padding + contentParts.join(', ') + padding;
+  const body = padding + contentParts.join(joiner) + padding;
   const newText = descriptor.openToken + body + descriptor.closeToken;
 
   if (exceedsMaxLineLength(newText, node, source, opts.maxJoinLength)) {
