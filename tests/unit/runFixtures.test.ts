@@ -345,3 +345,71 @@ runFixtures<Partial<JoinOptions>>(
   new URL('../fixtures/join-recursive-tsx', import.meta.url),
   runJoinRecursiveTsx,
 );
+
+// --- T-15: Toggle idempotency ---
+// Mirrors the shipped toggle decision in src/extension.ts: a node spanning a
+// single line splits, a multi-line node joins. PRD §7 phrases this as
+// `startPosition.row === endPosition.row`, which is equivalent to the
+// `node.text.includes('\n')` check the command uses. Each fixture applies the
+// toggle twice with a reparse in between; for canonical inputs the result is
+// the original text, so `out.ts === in.ts` is a real idempotency assertion.
+// Cases that cannot round-trip cleanly (sparse arrays, trailing-comma
+// normalization, a line comment that makes join refuse) snapshot whatever the
+// double toggle produces.
+type ToggleOptions = Partial<SplitOptions> & Partial<JoinOptions>;
+
+async function runToggleWith(
+  languageId: string,
+  input: string,
+  opts: ToggleOptions | undefined,
+): Promise<string> {
+  const reparse = await reparserFor(languageId);
+  const splitOpts: SplitOptions = { ...DEFAULT_SPLIT_OPTIONS, ...(opts ?? {}) };
+  const joinOpts: JoinOptions = { ...(opts ?? {}) };
+
+  const toggleOnce = (text: string): string => {
+    const node = findFirstSupported(reparse(text).rootNode);
+    if (!node) return text;
+
+    const singleLine = node.startPosition.row === node.endPosition.row;
+    if (singleLine) {
+      const { newText, range } = splitNode(node, text, splitOpts);
+      return text.slice(0, range.startIndex) + newText + text.slice(range.endIndex);
+    }
+
+    const result = joinNode(node, text, joinOpts);
+    if ('refused' in result) return text; // join refused → toggle is a no-op
+    const { newText, range } = result;
+    return text.slice(0, range.startIndex) + newText + text.slice(range.endIndex);
+  };
+
+  return toggleOnce(toggleOnce(input));
+}
+
+const runToggle = (input: string, opts: ToggleOptions | undefined) =>
+  runToggleWith('typescript', input, opts);
+const runToggleTsx = (input: string, opts: ToggleOptions | undefined) =>
+  runToggleWith('typescriptreact', input, opts);
+
+for (const type of [
+  'array',
+  'object',
+  'arguments',
+  'formal_parameters',
+  'array_pattern',
+  'object_pattern',
+  'named_imports',
+  'export_clause',
+  'type_arguments',
+  'type_parameters',
+  'tuple_type',
+  'object_type',
+]) {
+  runFixtures<ToggleOptions>(new URL(`../fixtures/toggle/${type}`, import.meta.url), runToggle);
+}
+for (const type of ['jsx_opening_element', 'jsx_self_closing_element']) {
+  runFixtures<ToggleOptions>(
+    new URL(`../fixtures/toggle-tsx/${type}`, import.meta.url),
+    runToggleTsx,
+  );
+}
