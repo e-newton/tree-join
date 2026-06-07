@@ -5,7 +5,15 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'wasm/**', 'tests/fixtures/**', '*.vsix'],
+    ignores: [
+      'dist/**',
+      'out-test/**',
+      '.vscode-test/**',
+      'node_modules/**',
+      'wasm/**',
+      'tests/fixtures/**',
+      '*.vsix',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -21,6 +29,14 @@ export default tseslint.config(
     },
     rules: {
       '@typescript-eslint/require-await': 'off',
+    },
+  },
+  {
+    files: ['tests/integration/**/*.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
+      },
     },
   },
   {
