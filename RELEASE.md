@@ -17,8 +17,8 @@ you go.
 
 - [ ] Sign in at <https://marketplace.visualstudio.com/manage> with the Microsoft
       account you want to own the extension.
-- [ ] Create a publisher with **ID `ericnewton`** (must match `publisher` in
-      `package.json` — the final extension id is `ericnewton.tree-join`).
+- [ ] Create a publisher with **ID `EricNewton`** (must match `publisher` in
+      `package.json` — the final extension id is `EricNewton.tree-join`).
 
 ### 2. Create the Azure DevOps Personal Access Token (for `vsce`)
 
@@ -29,14 +29,22 @@ you go.
 
 ### 3. Register the Open VSX namespace + token (for `ovsx`)
 
+> **Not launch-blocking.** Open VSX requires signing the Eclipse Foundation
+> Publisher Agreement, which can stall (account linking / Eclipse-side errors).
+> The Release workflow lets you publish `marketplace` only and add `openvsx`
+> later, so don't hold up v1.0.0 waiting on this.
+
 - [ ] Sign in at <https://open-vsx.org> with GitHub.
-- [ ] Accept the Eclipse Foundation Publisher Agreement (required, one-time):
-      <https://open-vsx.org/user-settings/extensions>.
+- [ ] Sign the Eclipse Foundation Publisher Agreement (required, one-time). Sign
+      it **from your Open VSX profile** (<https://open-vsx.org/user-settings/profile>)
+      after linking your Eclipse account — not directly on eclipse.org. Create
+      the Eclipse account with the **same GitHub identity** you log into Open VSX
+      with, or the "Agree" button won't appear.
 - [ ] Create an **access token** under user settings → copy it for `OVSX_PAT`.
-- [ ] Create the namespace `ericnewton` (replace the token):
+- [ ] Create the namespace `EricNewton` (must match `publisher`; replace the token):
 
 ```sh
-npx ovsx create-namespace ericnewton -p <your-OVSX_PAT>
+npx ovsx create-namespace EricNewton -p <your-OVSX_PAT>
 ```
 
 ### 4. Add the tokens as GitHub Actions secrets
@@ -95,14 +103,22 @@ or the Marketplace page shows a broken image.
    - In the **"Use workflow from"** ref dropdown, **select the `v1.0.0`
      tag** (not a branch). The tag-guard step fails the run if you pick a
      ref whose tag doesn't equal `package.json`'s version.
-6. [ ] Watch the run. It packages one `.vsix` and publishes it to **both** the
-       VSCode Marketplace and Open VSX.
+   - Pick **Which registries to publish to**:
+     - `both` (default) — Marketplace + Open VSX in one run.
+     - `marketplace` — Marketplace only. **Use this for the v1.0.0 launch if the
+       Open VSX Publisher Agreement isn't signed yet** (see step 3 of one-time
+       setup), so Eclipse delays don't hold up the release.
+     - `openvsx` — Open VSX only. Re-run this later from the **same `v1.0.0`
+       tag** once the agreement clears, with no Marketplace re-publish.
+6. [ ] Watch the run. It packages one `.vsix` and publishes it to the selected
+       registries. Only the matching secret is needed (`VSCE_PAT` for
+       Marketplace, `OVSX_PAT` for Open VSX).
 
 ### Verify the published extension
 
-- [ ] Marketplace listing live: <https://marketplace.visualstudio.com/items?itemName=ericnewton.tree-join>
-- [ ] Open VSX listing live: <https://open-vsx.org/extension/ericnewton/tree-join>
-- [ ] On a clean VSCode, install `ericnewton.tree-join`, open a `.ts` file, and
+- [ ] Marketplace listing live: <https://marketplace.visualstudio.com/items?itemName=EricNewton.tree-join>
+- [ ] Open VSX listing live: <https://open-vsx.org/extension/EricNewton/tree-join>
+- [ ] On a clean VSCode, install `EricNewton.tree-join`, open a `.ts` file, and
       run **Tree Join: Toggle** on `[1, 2, 3]` to confirm a real install works.
 
 ### If you ever need to publish from your laptop instead of CI
