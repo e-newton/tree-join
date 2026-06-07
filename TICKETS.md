@@ -14,7 +14,7 @@ Sequenced work breakdown for delivering the PRD. Each ticket is sized to be comp
 **Depends on:** —
 **Deliverables:**
 
-- `package.json` with `engines.vscode: ^1.85.0`, publisher `ericnewton`, name `tree-join`, MIT license, contributes one command `tree-join.helloWorld`.
+- `package.json` with `engines.vscode: ^1.85.0`, publisher `EricNewton`, name `tree-join`, MIT license, contributes one command `tree-join.helloWorld`.
 - `tsconfig.json` (strict).
 - `esbuild.config.mjs` building `src/extension.ts` → `dist/extension.js` (Node target, CommonJS, external `vscode`).
 - `.gitignore`, `LICENSE` (MIT), minimal `README.md` stub.

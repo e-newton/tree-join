@@ -5,7 +5,7 @@ function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
 }
 
-const EXTENSION_ID = 'ericnewton.tree-join';
+const EXTENSION_ID = 'EricNewton.tree-join';
 const COMMANDS = [
   'tree-join.toggle',
   'tree-join.join',

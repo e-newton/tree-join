@@ -161,7 +161,7 @@ WASM loading is deferred until the first command fires for a given language.
 
 ## 13. Publishing
 
-- Publisher id: `ericnewton`. Final extension id: `ericnewton.tree-join`.
+- Publisher id: `EricNewton`. Final extension id: `EricNewton.tree-join`.
 - CI: GitHub Actions running typecheck, vitest, `vsce package`. Manual `vsce publish` and `ovsx publish` for v1; consider automating on tag for v1.1.
 - README includes animated demos for split and join.
 

@@ -1,17 +1,33 @@
 name: Release
 
-# Manual-dispatch publish to the VSCode Marketplace and Open VSX.
+# Manual-dispatch publish to the VSCode Marketplace and/or Open VSX.
 #
 # Prerequisites (see RELEASE.md):
-#   - Repository secrets VSCE_PAT and OVSX_PAT are configured.
+#   - Repository secrets VSCE_PAT and/or OVSX_PAT are configured (only the one
+#     for the registry you're publishing to is required).
 #   - package.json `version` is bumped and committed.
 #   - HEAD is tagged `v<version>` (e.g. v1.0.0) and that tag is pushed.
 #
-# To release: open Actions → Release → "Run workflow" and select the
-# v<version> tag from the ref dropdown. The job refuses to publish unless the
-# checked-out commit carries a tag matching package.json's version.
+# To release: open Actions → Release → "Run workflow", select the v<version>
+# tag from the ref dropdown, and pick which registries to publish to. The job
+# refuses to publish unless the checked-out commit carries a tag matching
+# package.json's version.
+#
+# The `registries` input decouples the two registries so an Open VSX block
+# (e.g. a pending Eclipse Publisher Agreement) doesn't hold up the Marketplace
+# launch: dispatch `marketplace` now, then re-run `openvsx` from the same tag
+# once Open VSX is ready.
 on:
   workflow_dispatch:
+    inputs:
+      registries:
+        description: Which registries to publish to
+        type: choice
+        default: both
+        options:
+          - both
+          - marketplace
+          - openvsx
 
 permissions:
   contents: read
@@ -50,17 +66,19 @@ jobs:
             exit 1
           fi
 
-      # Package once and publish the identical .vsix to both registries.
+      # Package once and publish the identical .vsix to the selected registries.
       # `vsce package` runs the `vscode:prepublish` build automatically.
       - name: Package VSIX
         run: npx vsce package -o "tree-join-${{ github.run_id }}.vsix"
 
       - name: Publish to VSCode Marketplace
+        if: ${{ inputs.registries == 'both' || inputs.registries == 'marketplace' }}
         run: npx vsce publish --packagePath "tree-join-${{ github.run_id }}.vsix"
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
+        if: ${{ inputs.registries == 'both' || inputs.registries == 'openvsx' }}
         run: npx ovsx publish "tree-join-${{ github.run_id }}.vsix" -p "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}

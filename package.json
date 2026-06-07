@@ -3,7 +3,7 @@
   "displayName": "Tree Join",
   "description": "Toggle, split, and join TypeScript/JavaScript constructs using tree-sitter.",
   "version": "1.0.0",
-  "publisher": "ericnewton",
+  "publisher": "EricNewton",
   "license": "MIT",
   "author": "Eric Newton",
   "icon": "images/icon.png",
