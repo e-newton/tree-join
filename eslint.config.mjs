@@ -10,6 +10,7 @@ export default tseslint.config(
       'out-test/**',
       'out-test-web/**',
       '.vscode-test/**',
+      '.vscode-test-web/**',
       'node_modules/**',
       'wasm/**',
       'tests/fixtures/**',
