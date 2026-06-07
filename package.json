@@ -113,6 +113,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:update": "UPDATE_FIXTURES=1 vitest run",
+    "build:test": "node esbuild.test.mjs",
+    "test:integration": "npm run build && npm run build:test && vscode-test",
     "package": "vsce package",
     "prepare": "simple-git-hooks",
     "vscode:prepublish": "npm run build"
@@ -125,8 +127,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.24.0",
     "eslint": "^9.18.0",

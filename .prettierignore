@@ -1,5 +1,7 @@
 node_modules/
 dist/
+out-test/
+.vscode-test/
 wasm/
 tests/fixtures/
 package-lock.json
