@@ -1,7 +1,9 @@
 .vscode/**
 .vscode-test/**
+.vscode-test-web/**
 .vscode-test.mjs
 out-test/**
+out-test-web/**
 .claude/**
 src/**
 tests/**
@@ -15,7 +17,9 @@ node_modules/**
 .nvmrc
 tsconfig.json
 esbuild.config.mjs
+esbuild.config.d.mts
 esbuild.test.mjs
+esbuild.web-test.mjs
 eslint.config.mjs
 .prettierrc.json
 .prettierignore

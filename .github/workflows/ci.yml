@@ -24,6 +24,11 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
+      # `npm run build` emits both the Node (extension.js) and web
+      # (extension.web.js) bundles; fail fast if the web target went missing.
+      - name: Assert web bundle was emitted
+        run: test -f dist/extension.web.js
+      # `npm test` includes the in-memory web-bundle audit (no Node-isms leaked).
       - run: npm test
 
   integration:
