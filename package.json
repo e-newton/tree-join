@@ -117,7 +117,7 @@
     "build:test": "node esbuild.test.mjs",
     "test:integration": "npm run build && npm run build:test && vscode-test",
     "build:test:web": "node esbuild.web-test.mjs",
-    "test:web": "npm run build && npm run build:test:web && vscode-test-web --browserType=chromium --headless --extensionDevelopmentPath=. --extensionTestsPath=out-test-web/index.js",
+    "test:web": "npm run build && npm run build:test:web && vscode-test-web --browserType=chromium --headless --quality=stable --extensionDevelopmentPath=. --extensionTestsPath=out-test-web/index.js",
     "package": "vsce package",
     "prepare": "simple-git-hooks",
     "vscode:prepublish": "npm run build"
