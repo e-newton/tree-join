@@ -44,3 +44,30 @@ jobs:
       # needs a display server on headless CI. test:integration builds the
       # extension + test bundles before running vscode-test.
       - run: xvfb-run -a npm run test:integration
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # Restore Playwright's browser cache before `npm ci`, whose
+      # @vscode/test-web → @playwright/browser-chromium postinstall downloads
+      # chromium (~150MB) into this directory. Caching it avoids a re-download
+      # (and the occasional download flake) on every run.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: ms-playwright-${{ runner.os }}-
+      - run: npm ci
+      # The downloaded chromium ships without its system libraries.
+      - run: npx playwright install-deps chromium
+      # The web smoke launches headless chromium against a real vscode.dev-style
+      # web host (pinned to stable via the test:web script) and round-trips
+      # toggle across both grammar WASMs. This is the only CI check that proves
+      # the web bundle actually runs in a browser.
+      - run: npm run test:web
