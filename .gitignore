@@ -1,6 +1,8 @@
 node_modules/
 dist/
 out-test/
+out-test-web/
 *.vsix
 .vscode-test/
+.vscode-test-web/
 .DS_Store

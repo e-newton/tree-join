@@ -8,6 +8,7 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'out-test/**',
+      'out-test-web/**',
       '.vscode-test/**',
       'node_modules/**',
       'wasm/**',
@@ -32,7 +33,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['tests/integration/**/*.ts'],
+    files: ['tests/integration/**/*.ts', 'tests/web/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.mocha,
