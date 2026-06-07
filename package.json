@@ -2,17 +2,18 @@
   "name": "tree-join",
   "displayName": "Tree Join",
   "description": "Toggle, split, and join TypeScript/JavaScript constructs using tree-sitter.",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "ericnewton",
   "license": "MIT",
   "author": "Eric Newton",
-  "homepage": "https://github.com/ericnewton/tree-join#readme",
+  "icon": "images/icon.png",
+  "homepage": "https://github.com/e-newton/tree-join#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ericnewton/tree-join.git"
+    "url": "https://github.com/e-newton/tree-join.git"
   },
   "bugs": {
-    "url": "https://github.com/ericnewton/tree-join/issues"
+    "url": "https://github.com/e-newton/tree-join/issues"
   },
   "engines": {
     "vscode": "^1.85.0",
@@ -105,6 +106,7 @@
     "build": "node esbuild.config.mjs --prod",
     "build:dev": "node esbuild.config.mjs",
     "build:wasm": "node scripts/build-wasm.mjs",
+    "build:icon": "node scripts/gen-icon.mjs",
     "watch": "node esbuild.config.mjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -143,6 +145,7 @@
     "globals": "^15.14.0",
     "lint-staged": "^15.3.0",
     "mocha": "^11.7.6",
+    "ovsx": "^0.10.12",
     "prettier": "^3.4.0",
     "simple-git-hooks": "^2.11.0",
     "typescript": "^5.7.0",

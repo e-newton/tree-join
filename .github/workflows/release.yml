@@ -1,0 +1,66 @@
+name: Release
+
+# Manual-dispatch publish to the VSCode Marketplace and Open VSX.
+#
+# Prerequisites (see RELEASE.md):
+#   - Repository secrets VSCE_PAT and OVSX_PAT are configured.
+#   - package.json `version` is bumped and committed.
+#   - HEAD is tagged `v<version>` (e.g. v1.0.0) and that tag is pushed.
+#
+# To release: open Actions → Release → "Run workflow" and select the
+# v<version> tag from the ref dropdown. The job refuses to publish unless the
+# checked-out commit carries a tag matching package.json's version.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Full CI gate (build/test + integration + web) must pass first.
+  gate:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need tags to verify HEAD is on the v<version> release tag.
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+
+      # Honor "publish from tag": the dispatched ref must carry an exact tag
+      # equal to v<package.json version>, so we never publish an untagged or
+      # version-mismatched commit.
+      - name: Verify HEAD tag matches package.json version
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          TAG="$(git describe --exact-match --tags HEAD 2>/dev/null || true)"
+          echo "package.json version: $VERSION"
+          echo "HEAD tag:             ${TAG:-<none>}"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "::error::HEAD tag '${TAG:-<none>}' does not match package.json version '$VERSION'. Dispatch the Release workflow from the matching v<version> tag."
+            exit 1
+          fi
+
+      # Package once and publish the identical .vsix to both registries.
+      # `vsce package` runs the `vscode:prepublish` build automatically.
+      - name: Package VSIX
+        run: npx vsce package -o "tree-join-${{ github.run_id }}.vsix"
+
+      - name: Publish to VSCode Marketplace
+        run: npx vsce publish --packagePath "tree-join-${{ github.run_id }}.vsix"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: npx ovsx publish "tree-join-${{ github.run_id }}.vsix" -p "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
