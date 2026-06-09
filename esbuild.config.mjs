@@ -89,7 +89,11 @@ const baseConfig = {
     'web-tree-sitter': webTreeSitterCjs,
   },
   sourcemap: isProd ? false : 'inline',
-  minify: isProd,
+  // Ship readable production code. The VS Marketplace security scanner flags
+  // minified/obfuscated JS as "suspicious content", so we never minify the
+  // published bundle — the size cost is negligible next to the WASM grammars,
+  // and an open-source extension benefits from a legible shipped bundle.
+  minify: false,
   logLevel: 'info',
 };
 
