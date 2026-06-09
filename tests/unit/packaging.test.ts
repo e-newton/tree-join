@@ -46,8 +46,8 @@ const EXPECTED_SETTINGS = [
 const EXPECTED_LANGUAGES = ['typescript', 'typescriptreact', 'javascript', 'javascriptreact'];
 
 describe('package.json manifest', () => {
-  it('is named tree-join with publisher EricNewton (extension id EricNewton.tree-join)', () => {
-    expect(pkg.name).toBe('tree-join');
+  it('is named treejoin with publisher EricNewton (extension id EricNewton.treejoin)', () => {
+    expect(pkg.name).toBe('treejoin');
     expect(pkg.publisher).toBe('EricNewton');
   });
 
