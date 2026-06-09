@@ -129,8 +129,13 @@ describe('README', () => {
     }
   });
 
-  it('embeds the animated demo GIF', () => {
-    expect(readme).toMatch(/!\[[^\]]*\]\(images\/toggle\.gif\)/);
+  it('embeds the animated demo GIF via a direct https URL (no relative path / redirect)', () => {
+    // The Marketplace requires README image URLs to resolve to https. vsce
+    // rewrites a relative `images/toggle.gif` to a github.com/raw/HEAD URL that
+    // 302-redirects; an absolute raw.githubusercontent.com URL resolves 200
+    // directly, so we pin that form here.
+    const match = readme.match(/!\[[^\]]*\]\((https:\/\/[^)]*\/images\/toggle\.gif)\)/);
+    expect(match, 'README must reference toggle.gif via an absolute https URL').not.toBeNull();
   });
 
   it('documents every command id', () => {

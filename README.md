@@ -4,7 +4,7 @@ Toggle, split, and join TypeScript/JavaScript constructs with a single keystroke
 
 Put your cursor anywhere inside an array, object, function call, parameter list, import, JSX tag, or TypeScript type and flip it between its single-line and multi-line form. Output follows Prettier-compatible defaults, so it stays out of your formatter's way.
 
-![Toggling an array between single-line and multi-line](images/toggle.gif)
+![Toggling an array between single-line and multi-line](https://raw.githubusercontent.com/e-newton/tree-join/main/images/toggle.gif)
 
 ## Features
 
