@@ -1,5 +1,5 @@
 {
-  "name": "treejoin",
+  "name": "tree-join",
   "displayName": "Tree Join",
   "description": "Toggle, split, and join TypeScript/JavaScript constructs using tree-sitter.",
   "version": "1.0.0",
