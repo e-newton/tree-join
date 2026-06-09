@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 'EricNewton.treejoin';
+const EXTENSION_ID = 'EricNewton.tree-join';
 const COMMANDS = [
   'tree-join.toggle',
   'tree-join.join',
