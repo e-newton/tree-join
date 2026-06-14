@@ -1,11 +1,12 @@
-import { SyntaxNode } from './parseSource';
+import { GrammarKey, SyntaxNode } from './parseSource';
 
 type SourceType = 'named-children' | 'jsx-element-children';
 
 type ElementsSource = { kind: SourceType };
 
 export interface NodeTypeDescriptor {
-  type: SupportedNodeTypes;
+  /** The tree-sitter node type this descriptor matches (its table key). */
+  type: string;
   openToken: string;
   closeToken: string;
   /** Canonical separator to emit when none can be detected in the node. */
@@ -17,26 +18,29 @@ export interface NodeTypeDescriptor {
   separators?: string[];
   bracketSpacing: boolean;
   elementsField: ElementsSource;
+  /**
+   * Suppress the trailing separator on split regardless of the `trailingComma`
+   * setting, for constructs where one is a syntax error (e.g. a PHP group-use
+   * list: `use Foo\{A, B}` cannot be written `use Foo\{A, B,}`).
+   */
+  forbidTrailingSeparator?: boolean;
+  /**
+   * Some constructs have more than one surface form with different brackets
+   * (e.g. PHP `[...]` vs `array(...)`, both `array_creation_expression`). When
+   * set, the open/close delimiters are resolved per node from this function
+   * instead of the static `openToken`/`closeToken` (which remain the fallback).
+   */
+  delimiters?: (node: SyntaxNode) => { open: string; close: string };
 }
 
-type SupportedNodeTypes =
-  | 'array'
-  | 'object'
-  | 'arguments'
-  | 'formal_parameters'
-  | 'array_pattern'
-  | 'object_pattern'
-  | 'named_imports'
-  | 'export_clause'
-  | 'jsx_opening_element'
-  | 'jsx_self_closing_element'
-  | 'type_arguments'
-  | 'type_parameters'
-  | 'tuple_type'
-  | 'object_type';
-type SupportedSyntaxNode = SyntaxNode & { type: SupportedNodeTypes };
+/** A per-grammar map from tree-sitter node type to its descriptor. */
+export type DescriptorTable = Record<string, NodeTypeDescriptor>;
 
-export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
+/**
+ * TypeScript / TSX constructs. Both grammars share one table: the `typescript`
+ * grammar simply never produces the JSX node types, and TSX is a superset.
+ */
+const TS_NODE_TYPES: DescriptorTable = {
   array: {
     type: 'array',
     openToken: '[',
@@ -150,18 +154,103 @@ export const NODE_TYPES: Record<SupportedNodeTypes, NodeTypeDescriptor> = {
     bracketSpacing: true,
     elementsField: { kind: 'named-children' },
   },
-} as const;
+};
 
-export function isSupported(node: SyntaxNode): node is SupportedSyntaxNode {
-  return node.type in NODE_TYPES;
+/** PHP constructs. */
+const PHP_NODE_TYPES: DescriptorTable = {
+  // Both `[1, 2]` and the legacy `array(1, 2)` parse to this node; the brackets
+  // differ, so they are resolved per node via `delimiters`.
+  array_creation_expression: {
+    type: 'array_creation_expression',
+    openToken: '[',
+    closeToken: ']',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+    delimiters: (node) =>
+      node.children[0]?.type === '[' ? { open: '[', close: ']' } : { open: 'array(', close: ')' },
+  },
+  arguments: {
+    type: 'arguments',
+    openToken: '(',
+    closeToken: ')',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  formal_parameters: {
+    type: 'formal_parameters',
+    openToken: '(',
+    closeToken: ')',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+  },
+  // Group `use Foo\{A, B};` import list — the PHP analogue of `named_imports`.
+  namespace_use_group: {
+    type: 'namespace_use_group',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+    forbidTrailingSeparator: true,
+  },
+  // `match (x) { 1 => 'a', default => 'b' }` arm list.
+  match_block: {
+    type: 'match_block',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+};
+
+/**
+ * The descriptor table for every supported grammar. Adding a language means
+ * adding its grammar key here (and a `*_NODE_TYPES` table); the transforms are
+ * generic over the descriptors, so no transform code changes per language.
+ */
+export const NODE_TYPES_BY_GRAMMAR: Record<GrammarKey, DescriptorTable> = {
+  typescript: TS_NODE_TYPES,
+  tsx: TS_NODE_TYPES,
+  php: PHP_NODE_TYPES,
+};
+
+/** The descriptor table for a grammar (empty if the grammar is unknown). */
+export function descriptorsFor(grammar: GrammarKey): DescriptorTable {
+  return NODE_TYPES_BY_GRAMMAR[grammar] ?? {};
 }
 
-export function descriptorFor(node: SyntaxNode): NodeTypeDescriptor | undefined {
-  if (isSupported(node)) {
-    return NODE_TYPES[node.type];
-  }
+/**
+ * Per-grammar line-comment prefixes. A "line comment" runs to end of line, so
+ * joining a construct that contains one would swallow following code — hence the
+ * join guard. Block comments have a closing delimiter (a join keeps them inline)
+ * and are not listed. Note `#` is a line comment in PHP but a private-field
+ * sigil in TS, so this is grammar-bound.
+ */
+const LINE_COMMENT_PREFIXES: Record<GrammarKey, string[]> = {
+  typescript: ['//'],
+  tsx: ['//'],
+  php: ['//', '#'],
+};
 
-  return undefined;
+/** Whether `node` is a line comment in `grammar` (would be swallowed by a join). */
+export function isLineComment(node: SyntaxNode, grammar: GrammarKey): boolean {
+  if (node.type !== 'comment') return false;
+  return (LINE_COMMENT_PREFIXES[grammar] ?? ['//']).some((p) => node.text.startsWith(p));
+}
+
+export function isSupported(node: SyntaxNode, grammar: GrammarKey): boolean {
+  return node.type in descriptorsFor(grammar);
+}
+
+export function descriptorFor(
+  node: SyntaxNode,
+  grammar: GrammarKey,
+): NodeTypeDescriptor | undefined {
+  return descriptorsFor(grammar)[node.type];
 }
 
 /** Tokens that count as element separators for this node type. */
@@ -187,7 +276,7 @@ export function resolveSeparator(node: SyntaxNode, descriptor: NodeTypeDescripto
 
 export function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
   if (descriptor.elementsField.kind === 'named-children') {
-    return descriptor.openToken;
+    return descriptor.delimiters ? descriptor.delimiters(node).open : descriptor.openToken;
   }
 
   if (descriptor.elementsField.kind === 'jsx-element-children') {
@@ -201,6 +290,15 @@ export function getOpeningToken(node: SyntaxNode, descriptor: NodeTypeDescriptor
   }
 
   return '';
+}
+
+/**
+ * The closing delimiter to emit for this node. Mirrors `getOpeningToken`:
+ * resolved per node when the descriptor defines `delimiters`, else the static
+ * `closeToken` (JSX has no `delimiters`, so it always uses `closeToken`).
+ */
+export function getClosingToken(node: SyntaxNode, descriptor: NodeTypeDescriptor): string {
+  return descriptor.delimiters ? descriptor.delimiters(node).close : descriptor.closeToken;
 }
 
 export function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {

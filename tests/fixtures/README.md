@@ -1,9 +1,9 @@
 # Fixture corpus
 
 Snapshot fixtures that exercise the split / join / toggle transforms end-to-end
-on real tree-sitter parses. There are **299** `*.in.ts` ↔ `*.out.ts` pairs,
-driven by `tests/unit/runFixtures.test.ts` via the `runFixtures` helper in
-`tests/runFixtures.ts`.
+on real tree-sitter parses. There are **348** `*.in.ts` ↔ `*.out.ts` pairs (299
+TS/JS/TSX + 49 PHP), driven by `tests/unit/runFixtures.test.ts` via the
+`runFixtures` helper in `tests/runFixtures.ts`.
 
 ## How a fixture works
 
@@ -19,6 +19,9 @@ Conventions:
 
 - **`.tsx` content lives in `.in.ts` files** in the `-tsx` / `jsx_*` dirs; the
   harness parses them with the `typescriptreact` grammar regardless of suffix.
+- **PHP content also lives in `.in.ts` files** in the `*-php` dirs (the `.in.ts`
+  suffix is the harness's, not the language's); the harness parses them with the
+  `php` grammar. PHP inputs begin with `<?php`.
 - **Refusals** (join guards) render as a single line `// REFUSED: <code>` in the
   `.out.ts`, where `<code>` is `width` or `lineComment`.
 - **Toggle idempotency:** a toggle fixture applies the toggle twice (split then
@@ -60,6 +63,22 @@ both refusal codes on join.
 ² JSX attribute lists share the `split/jsx_attributes` and `join/jsx_attributes`
 dirs; refusals live in `join/jsx_attributes-refused-*`.
 
+### PHP (`php` grammar, `*-php` dirs)
+
+| Node type                    | Split | Join | Toggle | Join refusals      |
+| ---------------------------- | :---: | :--: | :----: | ------------------ |
+| `array_creation_expression`³ |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `arguments`                  |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `formal_parameters`          |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `namespace_use_group`        |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `match_block`                |   ✓   |  ✓   |   ✓    | width, lineComment |
+
+³ Covers both the `[…]` and legacy `array(…)` surface forms. The
+`*-refused-line-comment` dirs cover both `//` and `#` PHP line comments.
+`namespace_use_group` never emits a trailing comma on split (a syntax error
+there); the `split-php/trailing-comma-*` and `split-php/array-tabs` dirs cover
+the settings on PHP arrays.
+
 ## Directory layout
 
 ```
@@ -76,6 +95,13 @@ toggle/<node_type>/             # T-15 round-trip idempotency (TS)
 toggle-tsx/jsx_*/               # T-15 round-trip idempotency (TSX)
 split-recursive/  join-recursive/        # T-13 recursive variants (TS)
 split-recursive-tsx/  join-recursive-tsx/   # T-13 recursive variants (TSX)
+split-php/<node_type>/          # PHP force-split per node type
+split-php/array-tabs/           # PHP tab-indented split
+split-php/trailing-comma-{add,never,preserve}/   # PHP trailingComma on arrays
+join-php/<node_type>/           # PHP force-join per node type
+join-php/<node_type>-refused-{width,line-comment}/   # PHP join refusals
+toggle-php/<node_type>/         # PHP round-trip idempotency
+split-recursive-php/  join-recursive-php/   # PHP recursive variants
 sample/                         # no-op fixture proving the harness
 ```
 
@@ -84,4 +110,4 @@ sample/                         # no-op fixture proving the harness
 | Code          | Meaning                                                        |
 | ------------- | ------------------------------------------------------------- |
 | `width`       | Joined line would exceed the effective `maxJoinLength`.       |
-| `lineComment` | Node contains a `//` comment that joining would swallow.      |
+| `lineComment` | Node contains a line comment (`//`, or `#` in PHP) joining would swallow. |

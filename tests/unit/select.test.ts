@@ -19,7 +19,7 @@ describe('findTarget', () => {
 
   it('returns the array when cursor is inside an array literal', async () => {
     const tree = await getTypescriptTree('const x = [1, 2, 3]');
-    const node = findTarget(tree, { row: 0, column: 11 });
+    const node = findTarget(tree, { row: 0, column: 11 }, 'typescript');
 
     expect(node).toBeDefined();
     expect(node?.type).toBe('array');
@@ -27,14 +27,14 @@ describe('findTarget', () => {
 
   it('returns the array when cursor is on the opening bracket', async () => {
     const tree = await getTypescriptTree('const x = [1, 2, 3]');
-    const node = findTarget(tree, { row: 0, column: 10 });
+    const node = findTarget(tree, { row: 0, column: 10 }, 'typescript');
 
     expect(node?.type).toBe('array');
   });
 
   it('returns the array when cursor is between siblings (on a comma)', async () => {
     const tree = await getTypescriptTree('const x = [1, 2, 3]');
-    const node = findTarget(tree, { row: 0, column: 12 });
+    const node = findTarget(tree, { row: 0, column: 12 }, 'typescript');
 
     expect(node?.type).toBe('array');
   });
@@ -42,7 +42,7 @@ describe('findTarget', () => {
   it('returns the object when cursor is inside an object literal', async () => {
     // `const x = {a: 1}` — `{`=10, `a`=11, `:`=12, ` `=13, `1`=14, `}`=15
     const tree = await getTypescriptTree('const x = {a: 1}');
-    const node = findTarget(tree, { row: 0, column: 11 });
+    const node = findTarget(tree, { row: 0, column: 11 }, 'typescript');
 
     expect(node?.type).toBe('object');
   });
@@ -50,7 +50,7 @@ describe('findTarget', () => {
   it('returns the innermost literal when cursor is inside a nested literal', async () => {
     // `const x = [[1, 2], 3]` — outer `[`=10, inner `[`=11, `1`=12, `]`=16, outer `]`=20
     const tree = await getTypescriptTree('const x = [[1, 2], 3]');
-    const node = findTarget(tree, { row: 0, column: 12 });
+    const node = findTarget(tree, { row: 0, column: 12 }, 'typescript');
 
     expect(node?.type).toBe('array');
     expect(node?.startPosition.column).toBe(11);
@@ -60,7 +60,7 @@ describe('findTarget', () => {
   it('returns undefined when cursor is in an unsupported context', async () => {
     // `const x = "hello"` — `"`=10, `h`=11, `e`=12, `l`=13, `l`=14, `o`=15, `"`=16
     const tree = await getTypescriptTree('const x = "hello"');
-    const node = findTarget(tree, { row: 0, column: 13 });
+    const node = findTarget(tree, { row: 0, column: 13 }, 'typescript');
 
     expect(node).toBeUndefined();
   });
@@ -75,7 +75,7 @@ describe('findTarget', () => {
     ].join('\n');
     const tree = await getTypescriptTree(source);
     // row 2, column 2 is on the `2`
-    const node = findTarget(tree, { row: 2, column: 2 });
+    const node = findTarget(tree, { row: 2, column: 2 }, 'typescript');
 
     expect(node?.type).toBe('array');
     expect(node?.startPosition).toEqual({ row: 0, column: 10 });
@@ -91,7 +91,7 @@ describe('findTarget', () => {
     ].join('\n');
     const tree = await getTypescriptTree(source);
     // row 1, column 5 is on the `a` inside the inner object
-    const node = findTarget(tree, { row: 1, column: 5 });
+    const node = findTarget(tree, { row: 1, column: 5 }, 'typescript');
 
     expect(node?.type).toBe('object');
     expect(node?.startPosition).toEqual({ row: 1, column: 2 });
@@ -106,7 +106,7 @@ describe('findTarget', () => {
     ].join('\n');
     const tree = await getTypescriptTree(source);
     // row 2, column 0 is on the closing `]`
-    const node = findTarget(tree, { row: 2, column: 0 });
+    const node = findTarget(tree, { row: 2, column: 0 }, 'typescript');
 
     expect(node?.type).toBe('array');
   });

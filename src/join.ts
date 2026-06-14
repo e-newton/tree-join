@@ -1,11 +1,13 @@
 import {
   descriptorFor,
   getChildren,
+  getClosingToken,
   getOpeningToken,
+  isLineComment,
   NodeTypeDescriptor,
   resolveSeparator,
 } from './nodeTypes';
-import { SyntaxNode } from './parseSource';
+import { GrammarKey, SyntaxNode } from './parseSource';
 import { groupIntoRuns } from './runs';
 import { ElementOffsets, Range, TransformResult } from './types';
 
@@ -19,21 +21,26 @@ export type JoinOptions = {
   bracketSpacing?: boolean;
 };
 
-export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): TransformResult {
-  const descriptor = descriptorFor(node);
+export function joinNode(
+  node: SyntaxNode,
+  source: string,
+  opts: JoinOptions,
+  grammar: GrammarKey,
+): TransformResult {
+  const descriptor = descriptorFor(node, grammar);
 
   if (!descriptor) {
     throw new Error('Unable to join: node not supported');
   }
 
   if (descriptor.elementsField.kind === 'jsx-element-children') {
-    return joinJsxAttributes(node, descriptor, source, opts);
+    return joinJsxAttributes(node, descriptor, source, opts, grammar);
   }
 
   const range = rangeOf(node);
   const children = getChildren(node, descriptor);
 
-  if (children.some(isLineComment)) {
+  if (children.some((child) => isLineComment(child, grammar))) {
     return { refused: 'lineComment' };
   }
 
@@ -45,9 +52,11 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
 
   const padding = descriptor.bracketSpacing && (opts.bracketSpacing ?? true) ? ' ' : '';
   const joiner = resolveSeparator(node, descriptor) + ' ';
+  const openToken = getOpeningToken(node, descriptor);
+  const closeToken = getClosingToken(node, descriptor);
   const elements: ElementOffsets[] = [];
   const contentParts: string[] = [];
-  let offset = descriptor.openToken.length + padding.length;
+  let offset = openToken.length + padding.length;
 
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
@@ -71,7 +80,7 @@ export function joinNode(node: SyntaxNode, source: string, opts: JoinOptions): T
   }
 
   const body = padding + contentParts.join(joiner) + padding;
-  const newText = descriptor.openToken + body + descriptor.closeToken;
+  const newText = openToken + body + closeToken;
 
   if (exceedsMaxLineLength(newText, node, source, opts.maxJoinLength)) {
     return { refused: 'width' };
@@ -85,11 +94,12 @@ function joinJsxAttributes(
   descriptor: NodeTypeDescriptor,
   source: string,
   opts: JoinOptions,
+  grammar: GrammarKey,
 ): TransformResult {
   const range = rangeOf(node);
   const attributes = getChildren(node, descriptor);
 
-  if (attributes.some(containsLineComment)) {
+  if (attributes.some((attr) => containsLineComment(attr, grammar))) {
     return { refused: 'lineComment' };
   }
 
@@ -148,14 +158,10 @@ function rangeOf(node: SyntaxNode): Range {
   };
 }
 
-function isLineComment(node: SyntaxNode): boolean {
-  return node.type === 'comment' && node.text.startsWith('//');
-}
-
-function containsLineComment(node: SyntaxNode): boolean {
-  if (isLineComment(node)) return true;
+function containsLineComment(node: SyntaxNode, grammar: GrammarKey): boolean {
+  if (isLineComment(node, grammar)) return true;
   for (const child of node.children) {
-    if (child && containsLineComment(child)) return true;
+    if (child && containsLineComment(child, grammar)) return true;
   }
   return false;
 }

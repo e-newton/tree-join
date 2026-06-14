@@ -2,6 +2,22 @@
 
 All notable changes to this extension are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-14
+
+### Added
+
+- **PHP support.** All commands (`tree-join.toggle`, `tree-join.split`, `tree-join.join`, `tree-join.splitRecursive`, `tree-join.joinRecursive`) now work in `php` files, on these constructs:
+  - Arrays: `array_creation_expression`, covering both the `[…]` and legacy `array(…)` forms.
+  - Calls & signatures: `arguments`, `formal_parameters`.
+  - Imports: `namespace_use_group` (group `use Foo\{A, B}`).
+  - Match arms: `match_block`.
+- The PHP `tree-sitter-php` WASM grammar, lazy-loaded on first command like the existing grammars.
+- PHP-aware join guards: `#` (as well as `//`) line comments are recognized and block a join. The group-use list never emits a trailing comma on split, since one is a syntax error there.
+
+### Changed
+
+- Descriptor resolution is now grammar-keyed internally, so additional languages can be added by contributing a grammar and a descriptor table without touching the transforms.
+
 ## [1.0.0] - 2026-06-07
 
 First public release.
@@ -24,4 +40,5 @@ First public release.
 - **Quality tooling:** ESLint (flat config, `typescript-eslint` recommended-type-checked tier) and Prettier with project-wide formatting; `lint`, `lint:fix`, `format`, and `format:check` npm scripts; a `simple-git-hooks` + `lint-staged` pre-commit hook running Prettier on staged files.
 - **Test suites:** ~300 `*.in.ts`/`*.out.ts` fixture snapshots, an `@vscode/test-electron` integration smoke, and an `@vscode/test-web` headless browser smoke, all run in CI.
 
+[1.1.0]: https://github.com/e-newton/tree-join/releases/tag/v1.1.0
 [1.0.0]: https://github.com/e-newton/tree-join/releases/tag/v1.0.0

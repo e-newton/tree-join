@@ -58,11 +58,17 @@ async function reparserFor(languageId: string): Promise<Reparse> {
   };
 }
 
-function findFirstSupported(node: SyntaxNode): SyntaxNode | undefined {
-  if (isSupported(node)) return node;
+function grammarFor(languageId: string): GrammarKey {
+  const grammar = LANGUAGE_ID_TO_GRAMMAR[languageId];
+  if (!grammar) throw new Error(`Unsupported Language: ${languageId}`);
+  return grammar;
+}
+
+function findFirstSupported(node: SyntaxNode, grammar: GrammarKey): SyntaxNode | undefined {
+  if (isSupported(node, grammar)) return node;
   for (const child of node.namedChildren) {
     if (!child) continue;
-    const hit = findFirstSupported(child);
+    const hit = findFirstSupported(child, grammar);
     if (hit) return hit;
   }
   return undefined;
@@ -78,13 +84,14 @@ async function runSplitWith(
   input: string,
   opts: Partial<SplitOptions> | undefined,
 ): Promise<string> {
+  const grammar = grammarFor(languageId);
   const tree = await getTree(input, languageId);
-  const node = findFirstSupported(tree.rootNode);
+  const node = findFirstSupported(tree.rootNode, grammar);
 
   if (!node) throw Error('Cannot find supported node');
 
   const resolved: SplitOptions = { ...DEFAULT_SPLIT_OPTIONS, ...(opts ?? {}) };
-  const { newText, range } = splitNode(node, input, resolved);
+  const { newText, range } = splitNode(node, input, resolved, grammar);
   return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
 }
 
@@ -94,6 +101,9 @@ const runSplit = (input: string, opts: Partial<SplitOptions> | undefined) =>
 const runSplitTsx = (input: string, opts: Partial<SplitOptions> | undefined) =>
   runSplitWith('typescriptreact', input, opts);
 
+const runSplitPhp = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitWith('php', input, opts);
+
 const DEFAULT_JOIN_OPTIONS: JoinOptions = {};
 
 async function runJoinWith(
@@ -101,13 +111,14 @@ async function runJoinWith(
   input: string,
   opts: Partial<JoinOptions> | undefined,
 ): Promise<string> {
+  const grammar = grammarFor(languageId);
   const tree = await getTree(input, languageId);
-  const node = findFirstSupported(tree.rootNode);
+  const node = findFirstSupported(tree.rootNode, grammar);
 
   if (!node) throw Error('Cannot find supported node');
 
   const resolved: JoinOptions = { ...DEFAULT_JOIN_OPTIONS, ...(opts ?? {}) };
-  const result = joinNode(node, input, resolved);
+  const result = joinNode(node, input, resolved, grammar);
 
   if ('refused' in result) {
     return `// REFUSED: ${result.refused}`;
@@ -122,6 +133,9 @@ const runJoin = (input: string, opts: Partial<JoinOptions> | undefined) =>
 
 const runJoinTsx = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinWith('typescriptreact', input, opts);
+
+const runJoinPhp = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinWith('php', input, opts);
 
 runFixtures(new URL('../fixtures/sample', import.meta.url), async (input) => input);
 runFixtures<Partial<SplitOptions>>(
@@ -294,12 +308,13 @@ async function runSplitRecursiveWith(
   input: string,
   opts: Partial<SplitOptions> | undefined,
 ): Promise<string> {
+  const grammar = grammarFor(languageId);
   const reparse = await reparserFor(languageId);
-  const node = findFirstSupported(reparse(input).rootNode);
+  const node = findFirstSupported(reparse(input).rootNode, grammar);
   if (!node) throw Error('Cannot find supported node');
 
   const resolved: SplitOptions = { ...DEFAULT_SPLIT_OPTIONS, ...(opts ?? {}) };
-  const { newText, range } = splitRecursive(node, input, resolved, reparse);
+  const { newText, range } = splitRecursive(node, input, resolved, reparse, grammar);
   return input.slice(0, range.startIndex) + newText + input.slice(range.endIndex);
 }
 
@@ -308,11 +323,12 @@ async function runJoinRecursiveWith(
   input: string,
   opts: Partial<JoinOptions> | undefined,
 ): Promise<string> {
+  const grammar = grammarFor(languageId);
   const reparse = await reparserFor(languageId);
-  const node = findFirstSupported(reparse(input).rootNode);
+  const node = findFirstSupported(reparse(input).rootNode, grammar);
   if (!node) throw Error('Cannot find supported node');
 
-  const result = joinRecursive(node, input, { ...(opts ?? {}) }, reparse);
+  const result = joinRecursive(node, input, { ...(opts ?? {}) }, reparse, grammar);
   if ('refused' in result) {
     return `// REFUSED: ${result.refused}`;
   }
@@ -324,10 +340,14 @@ const runSplitRecursive = (input: string, opts: Partial<SplitOptions> | undefine
   runSplitRecursiveWith('typescript', input, opts);
 const runSplitRecursiveTsx = (input: string, opts: Partial<SplitOptions> | undefined) =>
   runSplitRecursiveWith('typescriptreact', input, opts);
+const runSplitRecursivePhp = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitRecursiveWith('php', input, opts);
 const runJoinRecursive = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinRecursiveWith('typescript', input, opts);
 const runJoinRecursiveTsx = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinRecursiveWith('typescriptreact', input, opts);
+const runJoinRecursivePhp = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinRecursiveWith('php', input, opts);
 
 runFixtures<Partial<SplitOptions>>(
   new URL('../fixtures/split-recursive', import.meta.url),
@@ -363,21 +383,22 @@ async function runToggleWith(
   input: string,
   opts: ToggleOptions | undefined,
 ): Promise<string> {
+  const grammar = grammarFor(languageId);
   const reparse = await reparserFor(languageId);
   const splitOpts: SplitOptions = { ...DEFAULT_SPLIT_OPTIONS, ...(opts ?? {}) };
   const joinOpts: JoinOptions = { ...(opts ?? {}) };
 
   const toggleOnce = (text: string): string => {
-    const node = findFirstSupported(reparse(text).rootNode);
+    const node = findFirstSupported(reparse(text).rootNode, grammar);
     if (!node) return text;
 
     const singleLine = node.startPosition.row === node.endPosition.row;
     if (singleLine) {
-      const { newText, range } = splitNode(node, text, splitOpts);
+      const { newText, range } = splitNode(node, text, splitOpts, grammar);
       return text.slice(0, range.startIndex) + newText + text.slice(range.endIndex);
     }
 
-    const result = joinNode(node, text, joinOpts);
+    const result = joinNode(node, text, joinOpts, grammar);
     if ('refused' in result) return text; // join refused → toggle is a no-op
     const { newText, range } = result;
     return text.slice(0, range.startIndex) + newText + text.slice(range.endIndex);
@@ -390,6 +411,8 @@ const runToggle = (input: string, opts: ToggleOptions | undefined) =>
   runToggleWith('typescript', input, opts);
 const runToggleTsx = (input: string, opts: ToggleOptions | undefined) =>
   runToggleWith('typescriptreact', input, opts);
+const runTogglePhp = (input: string, opts: ToggleOptions | undefined) =>
+  runToggleWith('php', input, opts);
 
 for (const type of [
   'array',
@@ -413,3 +436,61 @@ for (const type of ['jsx_opening_element', 'jsx_self_closing_element']) {
     runToggleTsx,
   );
 }
+
+// --- PHP fixtures ---
+// Mirrors the TS coverage matrix for each PHP node type: split, join (with both
+// refusal codes), and toggle round-trip, plus recursive variants and the
+// settings dirs. PHP `.in.ts` files hold PHP source (the `.in.ts` suffix is the
+// harness's, not the language's) and are parsed with the `php` grammar.
+const PHP_NODE_TYPES = [
+  'array_creation_expression',
+  'arguments',
+  'formal_parameters',
+  'namespace_use_group',
+  'match_block',
+];
+
+for (const type of PHP_NODE_TYPES) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split-php/${type}`, import.meta.url),
+    runSplitPhp,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join-php/${type}`, import.meta.url),
+    runJoinPhp,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join-php/${type}-refused-width`, import.meta.url),
+    runJoinPhp,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join-php/${type}-refused-line-comment`, import.meta.url),
+    runJoinPhp,
+  );
+  runFixtures<ToggleOptions>(
+    new URL(`../fixtures/toggle-php/${type}`, import.meta.url),
+    runTogglePhp,
+  );
+}
+
+// PHP settings coverage: tab indentation and the trailingComma modes on arrays.
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-php/array-tabs', import.meta.url),
+  (input, opts) => runSplitPhp(input, { insertSpaces: false, ...(opts ?? {}) }),
+);
+for (const mode of ['add', 'preserve', 'never']) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split-php/trailing-comma-${mode}`, import.meta.url),
+    runSplitPhp,
+  );
+}
+
+// PHP recursive variants.
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-recursive-php', import.meta.url),
+  runSplitRecursivePhp,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-recursive-php', import.meta.url),
+  runJoinRecursivePhp,
+);

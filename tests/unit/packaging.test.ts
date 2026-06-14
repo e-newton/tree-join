@@ -1,7 +1,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NODE_TYPES } from '../../src/nodeTypes';
+import { NODE_TYPES_BY_GRAMMAR } from '../../src/nodeTypes';
+
+/** Every distinct tree-sitter node type supported across all grammars. */
+const ALL_NODE_TYPES = Array.from(
+  new Set(Object.values(NODE_TYPES_BY_GRAMMAR).flatMap((table) => Object.keys(table))),
+);
 
 // Release-metadata guards (T-18). These assert the publishable manifest, README,
 // CHANGELOG, and icon stay internally consistent so a packaging/marketplace
@@ -43,7 +48,13 @@ const EXPECTED_SETTINGS = [
   'tree-join.trailingComma',
   'tree-join.bracketSpacing',
 ];
-const EXPECTED_LANGUAGES = ['typescript', 'typescriptreact', 'javascript', 'javascriptreact'];
+const EXPECTED_LANGUAGES = [
+  'typescript',
+  'typescriptreact',
+  'javascript',
+  'javascriptreact',
+  'php',
+];
 
 describe('package.json manifest', () => {
   it('is named tree-join with publisher EricNewton (extension id EricNewton.tree-join)', () => {
@@ -73,7 +84,7 @@ describe('package.json manifest', () => {
     expect(pkg.keywords.length).toBeGreaterThan(0);
   });
 
-  it('activates on exactly the four supported languages', () => {
+  it('activates on exactly the supported languages', () => {
     expect(pkg.activationEvents.sort()).toEqual(
       EXPECTED_LANGUAGES.map((l) => `onLanguage:${l}`).sort(),
     );
@@ -147,7 +158,7 @@ describe('README', () => {
   });
 
   it('documents every supported tree-sitter node type', () => {
-    for (const type of Object.keys(NODE_TYPES)) expect(readme).toContain(type);
+    for (const type of ALL_NODE_TYPES) expect(readme).toContain(type);
   });
 
   it('includes a recommended keybinding snippet for toggle', () => {

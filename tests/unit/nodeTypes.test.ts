@@ -3,7 +3,15 @@ import type { SyntaxNode, Tree } from '../../src/parseSource';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseSource } from '../../src/parseSource';
-import { descriptorFor, isSupported, resolveSeparator, separatorsFor } from '../../src/nodeTypes';
+import {
+  descriptorFor,
+  getClosingToken,
+  getOpeningToken,
+  isLineComment,
+  isSupported,
+  resolveSeparator,
+  separatorsFor,
+} from '../../src/nodeTypes';
 
 const TYPESCRIPT_ARRAY = 'const x = [1, 2, 3]';
 const TYPESCRIPT_OBJECT = 'const x = {a:1}';
@@ -44,13 +52,15 @@ describe('Node Types', () => {
       assert.fail('Unable to find array node');
     }
 
-    expect(isSupported(arrayNode)).toBe(true);
-    expect(descriptorFor(arrayNode)).toBeDefined();
-    expect(descriptorFor(arrayNode)?.openToken).toBe('[');
-    expect(descriptorFor(arrayNode)?.closeToken).toBe(']');
-    expect(descriptorFor(arrayNode)?.separator).toBe(',');
-    expect(descriptorFor(arrayNode)?.bracketSpacing).toBe(false);
-    expect(descriptorFor(arrayNode)?.elementsField).toEqual({ kind: 'named-children' });
+    expect(isSupported(arrayNode, 'typescript')).toBe(true);
+    expect(descriptorFor(arrayNode, 'typescript')).toBeDefined();
+    expect(descriptorFor(arrayNode, 'typescript')?.openToken).toBe('[');
+    expect(descriptorFor(arrayNode, 'typescript')?.closeToken).toBe(']');
+    expect(descriptorFor(arrayNode, 'typescript')?.separator).toBe(',');
+    expect(descriptorFor(arrayNode, 'typescript')?.bracketSpacing).toBe(false);
+    expect(descriptorFor(arrayNode, 'typescript')?.elementsField).toEqual({
+      kind: 'named-children',
+    });
   });
   it('should be able to get type descriptor for typescript object', async () => {
     const tree = await getTypescriptTree(TYPESCRIPT_OBJECT);
@@ -60,13 +70,15 @@ describe('Node Types', () => {
       assert.fail('Unable to find object node');
     }
 
-    expect(isSupported(objectNode)).toBe(true);
-    expect(descriptorFor(objectNode)).toBeDefined();
-    expect(descriptorFor(objectNode)?.openToken).toBe('{');
-    expect(descriptorFor(objectNode)?.closeToken).toBe('}');
-    expect(descriptorFor(objectNode)?.separator).toBe(',');
-    expect(descriptorFor(objectNode)?.bracketSpacing).toBe(true);
-    expect(descriptorFor(objectNode)?.elementsField).toEqual({ kind: 'named-children' });
+    expect(isSupported(objectNode, 'typescript')).toBe(true);
+    expect(descriptorFor(objectNode, 'typescript')).toBeDefined();
+    expect(descriptorFor(objectNode, 'typescript')?.openToken).toBe('{');
+    expect(descriptorFor(objectNode, 'typescript')?.closeToken).toBe('}');
+    expect(descriptorFor(objectNode, 'typescript')?.separator).toBe(',');
+    expect(descriptorFor(objectNode, 'typescript')?.bracketSpacing).toBe(true);
+    expect(descriptorFor(objectNode, 'typescript')?.elementsField).toEqual({
+      kind: 'named-children',
+    });
   });
   it('should not be able to get type descriptor for typescript string', async () => {
     const tree = await getTypescriptTree(TYPESCRIPT_STRING);
@@ -76,8 +88,8 @@ describe('Node Types', () => {
       assert.fail('Unable to find string node');
     }
 
-    expect(isSupported(stringNode)).toBe(false);
-    expect(descriptorFor(stringNode)).toBeUndefined();
+    expect(isSupported(stringNode, 'typescript')).toBe(false);
+    expect(descriptorFor(stringNode, 'typescript')).toBeUndefined();
   });
   it('should be able to get type descriptor for typescript arguments', async () => {
     const tree = await getTypescriptTree(TYPESCRIPT_ARGUMENTS);
@@ -87,13 +99,15 @@ describe('Node Types', () => {
       assert.fail('Unable to find arguments node');
     }
 
-    expect(isSupported(argumentsNode)).toBe(true);
-    expect(descriptorFor(argumentsNode)).toBeDefined();
-    expect(descriptorFor(argumentsNode)?.openToken).toBe('(');
-    expect(descriptorFor(argumentsNode)?.closeToken).toBe(')');
-    expect(descriptorFor(argumentsNode)?.separator).toBe(',');
-    expect(descriptorFor(argumentsNode)?.bracketSpacing).toBe(false);
-    expect(descriptorFor(argumentsNode)?.elementsField).toEqual({ kind: 'named-children' });
+    expect(isSupported(argumentsNode, 'typescript')).toBe(true);
+    expect(descriptorFor(argumentsNode, 'typescript')).toBeDefined();
+    expect(descriptorFor(argumentsNode, 'typescript')?.openToken).toBe('(');
+    expect(descriptorFor(argumentsNode, 'typescript')?.closeToken).toBe(')');
+    expect(descriptorFor(argumentsNode, 'typescript')?.separator).toBe(',');
+    expect(descriptorFor(argumentsNode, 'typescript')?.bracketSpacing).toBe(false);
+    expect(descriptorFor(argumentsNode, 'typescript')?.elementsField).toEqual({
+      kind: 'named-children',
+    });
   });
   it('should be able to get type descriptor for typescript formal_parameters', async () => {
     const tree = await getTypescriptTree(TYPESCRIPT_FORMAL_PARAMETERS);
@@ -103,13 +117,15 @@ describe('Node Types', () => {
       assert.fail('Unable to find formal_parameters node');
     }
 
-    expect(isSupported(formalParametersNode)).toBe(true);
-    expect(descriptorFor(formalParametersNode)).toBeDefined();
-    expect(descriptorFor(formalParametersNode)?.openToken).toBe('(');
-    expect(descriptorFor(formalParametersNode)?.closeToken).toBe(')');
-    expect(descriptorFor(formalParametersNode)?.separator).toBe(',');
-    expect(descriptorFor(formalParametersNode)?.bracketSpacing).toBe(false);
-    expect(descriptorFor(formalParametersNode)?.elementsField).toEqual({ kind: 'named-children' });
+    expect(isSupported(formalParametersNode, 'typescript')).toBe(true);
+    expect(descriptorFor(formalParametersNode, 'typescript')).toBeDefined();
+    expect(descriptorFor(formalParametersNode, 'typescript')?.openToken).toBe('(');
+    expect(descriptorFor(formalParametersNode, 'typescript')?.closeToken).toBe(')');
+    expect(descriptorFor(formalParametersNode, 'typescript')?.separator).toBe(',');
+    expect(descriptorFor(formalParametersNode, 'typescript')?.bracketSpacing).toBe(false);
+    expect(descriptorFor(formalParametersNode, 'typescript')?.elementsField).toEqual({
+      kind: 'named-children',
+    });
   });
   it('should be able to get type descriptor for typescript array_pattern', async () => {
     const tree = await getTypescriptTree(TYPESCRIPT_ARRAY_PATTERN);
@@ -119,13 +135,15 @@ describe('Node Types', () => {
       assert.fail('Unable to find array_pattern node');
     }
 
-    expect(isSupported(arrayPatternNode)).toBe(true);
-    expect(descriptorFor(arrayPatternNode)).toBeDefined();
-    expect(descriptorFor(arrayPatternNode)?.openToken).toBe('[');
-    expect(descriptorFor(arrayPatternNode)?.closeToken).toBe(']');
-    expect(descriptorFor(arrayPatternNode)?.separator).toBe(',');
-    expect(descriptorFor(arrayPatternNode)?.bracketSpacing).toBe(false);
-    expect(descriptorFor(arrayPatternNode)?.elementsField).toEqual({ kind: 'named-children' });
+    expect(isSupported(arrayPatternNode, 'typescript')).toBe(true);
+    expect(descriptorFor(arrayPatternNode, 'typescript')).toBeDefined();
+    expect(descriptorFor(arrayPatternNode, 'typescript')?.openToken).toBe('[');
+    expect(descriptorFor(arrayPatternNode, 'typescript')?.closeToken).toBe(']');
+    expect(descriptorFor(arrayPatternNode, 'typescript')?.separator).toBe(',');
+    expect(descriptorFor(arrayPatternNode, 'typescript')?.bracketSpacing).toBe(false);
+    expect(descriptorFor(arrayPatternNode, 'typescript')?.elementsField).toEqual({
+      kind: 'named-children',
+    });
   });
   it('should be able to get type descriptor for typescript object_pattern', async () => {
     const tree = await getTypescriptTree(TYPESCRIPT_OBJECT_PATTERN);
@@ -135,13 +153,15 @@ describe('Node Types', () => {
       assert.fail('Unable to find object_pattern node');
     }
 
-    expect(isSupported(objectPatternNode)).toBe(true);
-    expect(descriptorFor(objectPatternNode)).toBeDefined();
-    expect(descriptorFor(objectPatternNode)?.openToken).toBe('{');
-    expect(descriptorFor(objectPatternNode)?.closeToken).toBe('}');
-    expect(descriptorFor(objectPatternNode)?.separator).toBe(',');
-    expect(descriptorFor(objectPatternNode)?.bracketSpacing).toBe(true);
-    expect(descriptorFor(objectPatternNode)?.elementsField).toEqual({ kind: 'named-children' });
+    expect(isSupported(objectPatternNode, 'typescript')).toBe(true);
+    expect(descriptorFor(objectPatternNode, 'typescript')).toBeDefined();
+    expect(descriptorFor(objectPatternNode, 'typescript')?.openToken).toBe('{');
+    expect(descriptorFor(objectPatternNode, 'typescript')?.closeToken).toBe('}');
+    expect(descriptorFor(objectPatternNode, 'typescript')?.separator).toBe(',');
+    expect(descriptorFor(objectPatternNode, 'typescript')?.bracketSpacing).toBe(true);
+    expect(descriptorFor(objectPatternNode, 'typescript')?.elementsField).toEqual({
+      kind: 'named-children',
+    });
   });
 
   it('should get a tuple_type descriptor with array-like brackets', async () => {
@@ -149,8 +169,8 @@ describe('Node Types', () => {
     const node = walkToNodeType(tree.rootNode, 'tuple_type');
     if (!node) assert.fail('Unable to find tuple_type node');
 
-    expect(isSupported(node)).toBe(true);
-    const d = descriptorFor(node);
+    expect(isSupported(node, 'typescript')).toBe(true);
+    const d = descriptorFor(node, 'typescript');
     expect(d?.openToken).toBe('[');
     expect(d?.closeToken).toBe(']');
     expect(d?.separator).toBe(',');
@@ -162,8 +182,8 @@ describe('Node Types', () => {
     const node = walkToNodeType(tree.rootNode, 'type_arguments');
     if (!node) assert.fail('Unable to find type_arguments node');
 
-    expect(isSupported(node)).toBe(true);
-    const d = descriptorFor(node);
+    expect(isSupported(node, 'typescript')).toBe(true);
+    const d = descriptorFor(node, 'typescript');
     expect(d?.openToken).toBe('<');
     expect(d?.closeToken).toBe('>');
     expect(d?.separator).toBe(',');
@@ -175,8 +195,8 @@ describe('Node Types', () => {
     const node = walkToNodeType(tree.rootNode, 'type_parameters');
     if (!node) assert.fail('Unable to find type_parameters node');
 
-    expect(isSupported(node)).toBe(true);
-    const d = descriptorFor(node);
+    expect(isSupported(node, 'typescript')).toBe(true);
+    const d = descriptorFor(node, 'typescript');
     expect(d?.openToken).toBe('<');
     expect(d?.closeToken).toBe('>');
     expect(d?.bracketSpacing).toBe(false);
@@ -187,8 +207,8 @@ describe('Node Types', () => {
     const node = walkToNodeType(tree.rootNode, 'object_type');
     if (!node) assert.fail('Unable to find object_type node');
 
-    expect(isSupported(node)).toBe(true);
-    const d = descriptorFor(node);
+    expect(isSupported(node, 'typescript')).toBe(true);
+    const d = descriptorFor(node, 'typescript');
     expect(d?.openToken).toBe('{');
     expect(d?.closeToken).toBe('}');
     expect(d?.bracketSpacing).toBe(true);
@@ -200,7 +220,7 @@ describe('Node Types', () => {
     const tree = await getTypescriptTree(TYPESCRIPT_ARRAY);
     const node = walkToNodeType(tree.rootNode, 'array');
     if (!node) assert.fail('Unable to find array node');
-    expect(separatorsFor(descriptorFor(node)!)).toEqual([',']);
+    expect(separatorsFor(descriptorFor(node, 'typescript')!)).toEqual([',']);
   });
 
   describe('resolveSeparator (object_type)', () => {
@@ -213,22 +233,111 @@ describe('Node Types', () => {
 
     it('preserves an existing semicolon', async () => {
       const node = await objectTypeNode('type X = { a: string; b: number }');
-      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(';');
+      expect(resolveSeparator(node, descriptorFor(node, 'typescript')!)).toBe(';');
     });
 
     it('preserves an existing comma', async () => {
       const node = await objectTypeNode('type X = { a: string, b: number }');
-      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(',');
+      expect(resolveSeparator(node, descriptorFor(node, 'typescript')!)).toBe(',');
     });
 
     it('uses the first separator for a mixed node', async () => {
       const node = await objectTypeNode('type X = { a: string, b: number; c: boolean }');
-      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(',');
+      expect(resolveSeparator(node, descriptorFor(node, 'typescript')!)).toBe(',');
     });
 
     it('defaults to ; when no separator is present', async () => {
       const node = await objectTypeNode('type X = { a: string }');
-      expect(resolveSeparator(node, descriptorFor(node)!)).toBe(';');
+      expect(resolveSeparator(node, descriptorFor(node, 'typescript')!)).toBe(';');
+    });
+  });
+});
+
+describe('PHP node types', () => {
+  async function getPhpTree(source: string): Promise<Tree> {
+    return await parseSource(source, 'php', async (filename: string) =>
+      readFileSync(join(__dirname, '../../wasm', filename)),
+    );
+  }
+
+  async function phpNode(source: string, type: string): Promise<SyntaxNode> {
+    const tree = await getPhpTree(source);
+    const node = walkToNodeType(tree.rootNode, type);
+    if (!node) assert.fail(`Unable to find ${type} node`);
+    return node;
+  }
+
+  it('supports array_creation_expression with array-like brackets', async () => {
+    const node = await phpNode('<?php $x = [1, 2, 3];', 'array_creation_expression');
+    expect(isSupported(node, 'php')).toBe(true);
+    const d = descriptorFor(node, 'php');
+    expect(d?.separator).toBe(',');
+    expect(d?.bracketSpacing).toBe(false);
+    expect(getOpeningToken(node, d!)).toBe('[');
+    expect(getClosingToken(node, d!)).toBe(']');
+  });
+
+  it('resolves the array(...) surface form to its own delimiters', async () => {
+    const node = await phpNode('<?php $x = array(1, 2, 3);', 'array_creation_expression');
+    const d = descriptorFor(node, 'php');
+    expect(getOpeningToken(node, d!)).toBe('array(');
+    expect(getClosingToken(node, d!)).toBe(')');
+  });
+
+  it('supports arguments and formal_parameters', async () => {
+    const args = await phpNode('<?php foo($a, $b);', 'arguments');
+    const params = await phpNode('<?php function f($a, $b) {}', 'formal_parameters');
+    expect(isSupported(args, 'php')).toBe(true);
+    expect(isSupported(params, 'php')).toBe(true);
+    expect(descriptorFor(args, 'php')?.openToken).toBe('(');
+    expect(descriptorFor(params, 'php')?.closeToken).toBe(')');
+  });
+
+  it('supports namespace_use_group and forbids a trailing separator there', async () => {
+    const node = await phpNode('<?php use Foo\\{A, B};', 'namespace_use_group');
+    const d = descriptorFor(node, 'php');
+    expect(isSupported(node, 'php')).toBe(true);
+    expect(d?.openToken).toBe('{');
+    expect(d?.bracketSpacing).toBe(false);
+    expect(d?.forbidTrailingSeparator).toBe(true);
+  });
+
+  it('supports match_block with padded braces', async () => {
+    const node = await phpNode("<?php $r = match($x) { 1 => 'a' };", 'match_block');
+    const d = descriptorFor(node, 'php');
+    expect(isSupported(node, 'php')).toBe(true);
+    expect(d?.bracketSpacing).toBe(true);
+  });
+
+  it('isolates descriptors by grammar (php array node is unsupported under typescript)', async () => {
+    const node = await phpNode('<?php $x = [1, 2, 3];', 'array_creation_expression');
+    expect(isSupported(node, 'php')).toBe(true);
+    expect(isSupported(node, 'typescript')).toBe(false);
+    expect(descriptorFor(node, 'typescript')).toBeUndefined();
+  });
+
+  describe('isLineComment', () => {
+    it('treats # as a line comment in php but not in typescript', async () => {
+      const node = await phpNode('<?php $x = [1, # note\n2];', 'array_creation_expression');
+      const hash = node.children.find((c) => c?.type === 'comment');
+      if (!hash) assert.fail('no comment node found');
+      expect(hash.text.startsWith('#')).toBe(true);
+      expect(isLineComment(hash, 'php')).toBe(true);
+      expect(isLineComment(hash, 'typescript')).toBe(false);
+    });
+
+    it('treats // as a line comment in php', async () => {
+      const node = await phpNode('<?php $x = [1, // note\n2];', 'array_creation_expression');
+      const slash = node.children.find((c) => c?.type === 'comment');
+      if (!slash) assert.fail('no comment node found');
+      expect(isLineComment(slash, 'php')).toBe(true);
+    });
+
+    it('does not treat a block comment as a line comment', async () => {
+      const node = await phpNode('<?php $x = [1, /* note */ 2];', 'array_creation_expression');
+      const block = node.children.find((c) => c?.type === 'comment');
+      if (!block) assert.fail('no comment node found');
+      expect(isLineComment(block, 'php')).toBe(false);
     });
   });
 });
