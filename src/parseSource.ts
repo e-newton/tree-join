@@ -2,18 +2,20 @@ import { Language, Parser } from 'web-tree-sitter';
 
 export type { Node as SyntaxNode, Point, Tree } from 'web-tree-sitter';
 
-export type GrammarKey = 'typescript' | 'tsx';
+export type GrammarKey = 'typescript' | 'tsx' | 'php';
 
 export const LANGUAGE_ID_TO_GRAMMAR: Record<string, GrammarKey> = {
   typescript: 'typescript',
   javascript: 'typescript',
   typescriptreact: 'tsx',
   javascriptreact: 'tsx',
+  php: 'php',
 };
 
 export const GRAMMAR_FILE: Record<GrammarKey, string> = {
   typescript: 'tree-sitter-typescript.wasm',
   tsx: 'tree-sitter-tsx.wasm',
+  php: 'tree-sitter-php.wasm',
 };
 
 export async function parseSource(

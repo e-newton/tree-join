@@ -1,8 +1,8 @@
 {
   "name": "tree-join",
   "displayName": "Tree Join",
-  "description": "Toggle, split, and join TypeScript/JavaScript constructs using tree-sitter.",
-  "version": "1.0.0",
+  "description": "Toggle, split, and join TypeScript/JavaScript/PHP constructs using tree-sitter.",
+  "version": "1.1.0",
   "publisher": "EricNewton",
   "license": "MIT",
   "author": "Eric Newton",
@@ -27,6 +27,7 @@
     "tree-sitter",
     "typescript",
     "javascript",
+    "php",
     "formatter",
     "split",
     "join"
@@ -37,7 +38,8 @@
     "onLanguage:typescript",
     "onLanguage:typescriptreact",
     "onLanguage:javascript",
-    "onLanguage:javascriptreact"
+    "onLanguage:javascriptreact",
+    "onLanguage:php"
   ],
   "capabilities": {
     "untrustedWorkspaces": {

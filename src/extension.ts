@@ -7,7 +7,7 @@ import { applyTransforms } from './apply';
 import { JoinRefusal, TransformResult } from './types';
 import { splitNode, SplitOptions } from './split';
 import { joinRecursive, Reparse, splitRecursive } from './recursive';
-import { SyntaxNode } from './parseSource';
+import { GrammarKey, LANGUAGE_ID_TO_GRAMMAR, SyntaxNode } from './parseSource';
 import { joinOptionsFor, splitOptionsFor } from './config';
 
 type NoTarget = { kind: 'noTarget' };
@@ -24,6 +24,7 @@ type TransformPicker = (
   splitOpts: SplitOptions,
   joinOpts: JoinOptions,
   parse: Reparse,
+  grammar: GrammarKey,
 ) => TransformResult;
 
 /**
@@ -64,6 +65,10 @@ async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void>
   if (!parser) {
     return;
   }
+  const grammar = LANGUAGE_ID_TO_GRAMMAR[editor.document.languageId];
+  if (!grammar) {
+    return;
+  }
   const source = editor.document.getText();
   const tree = parser.parse(source);
   if (!tree) {
@@ -78,7 +83,9 @@ async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void>
       return next;
     };
 
-    let targets = editor.selections.map((sel) => findTarget(tree, toParserPoint(sel.active)));
+    let targets = editor.selections.map((sel) =>
+      findTarget(tree, toParserPoint(sel.active), grammar),
+    );
     if (dedup) {
       targets = dedupTargets(targets);
     }
@@ -87,7 +94,7 @@ async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void>
       if (!node) {
         return { kind: 'noTarget' };
       }
-      return pick(node, source, splitOpts, joinOpts, parse);
+      return pick(node, source, splitOpts, joinOpts, parse, grammar);
     });
 
     const transforms = outcomes.filter((o): o is TransformResult => !('kind' in o));
@@ -114,28 +121,33 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('tree-join.join', () =>
-      runOnCursors((node, source, _splitOpts, joinOpts) => joinNode(node, source, joinOpts)),
+      runOnCursors((node, source, _splitOpts, joinOpts, _parse, grammar) =>
+        joinNode(node, source, joinOpts, grammar),
+      ),
     ),
     vscode.commands.registerCommand('tree-join.split', () =>
-      runOnCursors((node, source, splitOpts) => splitNode(node, source, splitOpts)),
+      runOnCursors((node, source, splitOpts, _joinOpts, _parse, grammar) =>
+        splitNode(node, source, splitOpts, grammar),
+      ),
     ),
     vscode.commands.registerCommand('tree-join.toggle', () =>
-      runOnCursors((node, source, splitOpts, joinOpts) =>
+      runOnCursors((node, source, splitOpts, joinOpts, _parse, grammar) =>
         node.text.includes('\n')
-          ? joinNode(node, source, joinOpts)
-          : splitNode(node, source, splitOpts),
+          ? joinNode(node, source, joinOpts, grammar)
+          : splitNode(node, source, splitOpts, grammar),
       ),
     ),
     vscode.commands.registerCommand('tree-join.splitRecursive', () =>
       runOnCursors(
-        (node, source, splitOpts, _joinOpts, parse) =>
-          splitRecursive(node, source, splitOpts, parse),
+        (node, source, splitOpts, _joinOpts, parse, grammar) =>
+          splitRecursive(node, source, splitOpts, parse, grammar),
         true,
       ),
     ),
     vscode.commands.registerCommand('tree-join.joinRecursive', () =>
       runOnCursors(
-        (node, source, _splitOpts, joinOpts, parse) => joinRecursive(node, source, joinOpts, parse),
+        (node, source, _splitOpts, joinOpts, parse, grammar) =>
+          joinRecursive(node, source, joinOpts, parse, grammar),
         true,
       ),
     ),

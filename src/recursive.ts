@@ -1,6 +1,6 @@
 import { joinNode, JoinOptions } from './join';
 import { descriptorFor, getChildren, isSupported } from './nodeTypes';
-import { SyntaxNode, Tree } from './parseSource';
+import { GrammarKey, SyntaxNode, Tree } from './parseSource';
 import { groupIntoRuns } from './runs';
 import { findTarget } from './select';
 import { splitNode, SplitOptions } from './split';
@@ -31,8 +31,8 @@ function contains(outer: SyntaxNode, inner: SyntaxNode): boolean {
 }
 
 /** Number of elements in a supported node (skip rule: 1 = single-element). */
-function elementCount(node: SyntaxNode): number {
-  const descriptor = descriptorFor(node);
+function elementCount(node: SyntaxNode, grammar: GrammarKey): number {
+  const descriptor = descriptorFor(node, grammar);
   if (!descriptor) return 0;
   const children = getChildren(node, descriptor);
   if (descriptor.elementsField.kind === 'jsx-element-children') {
@@ -42,10 +42,10 @@ function elementCount(node: SyntaxNode): number {
 }
 
 /** Supported nodes within (and including) `node`, in pre-order. */
-function collectSupported(node: SyntaxNode): SyntaxNode[] {
+function collectSupported(node: SyntaxNode, grammar: GrammarKey): SyntaxNode[] {
   const out: SyntaxNode[] = [];
   const visit = (n: SyntaxNode): void => {
-    if (isSupported(n)) out.push(n);
+    if (isSupported(n, grammar)) out.push(n);
     for (const child of n.children) {
       if (child) visit(child);
     }
@@ -55,8 +55,8 @@ function collectSupported(node: SyntaxNode): SyntaxNode[] {
 }
 
 /** Re-resolve the original target in a freshly parsed working tree. */
-function findAnchored(tree: Tree, target: SyntaxNode): SyntaxNode | undefined {
-  return findTarget(tree, target.startPosition);
+function findAnchored(tree: Tree, target: SyntaxNode, grammar: GrammarKey): SyntaxNode | undefined {
+  return findTarget(tree, target.startPosition, grammar);
 }
 
 /**
@@ -69,6 +69,7 @@ export function splitRecursive(
   source: string,
   opts: SplitOptions,
   reparse: Reparse,
+  grammar: GrammarKey,
 ): TransformSuccess {
   const originalRange = rangeOf(target);
   let working = source;
@@ -77,19 +78,21 @@ export function splitRecursive(
   for (;;) {
     const tree = reparse(working);
     try {
-      const current = findAnchored(tree, target);
+      const current = findAnchored(tree, target, grammar);
       if (!current) break;
 
       // Pre-order: the target itself comes first, so the outer splits before
       // its descendants and each descendant re-indents off the fresh parse.
-      const node = collectSupported(current).find((n) => isSingleLine(n) && elementCount(n) >= 2);
+      const node = collectSupported(current, grammar).find(
+        (n) => isSingleLine(n) && elementCount(n, grammar) >= 2,
+      );
 
       if (!node) {
         finalText = current.text;
         break;
       }
 
-      const result = splitNode(node, working, opts);
+      const result = splitNode(node, working, opts, grammar);
       working = working.slice(0, node.startIndex) + result.newText + working.slice(node.endIndex);
     } finally {
       tree.delete();
@@ -110,6 +113,7 @@ export function joinRecursive(
   source: string,
   opts: JoinOptions,
   reparse: Reparse,
+  grammar: GrammarKey,
 ): TransformResult {
   const originalRange = rangeOf(target);
   let working = source;
@@ -118,19 +122,24 @@ export function joinRecursive(
   for (;;) {
     const tree = reparse(working);
     try {
-      const current = findAnchored(tree, target);
+      const current = findAnchored(tree, target, grammar);
       if (!current) break;
 
-      const node = innermostMultiLine(current);
+      const node = innermostMultiLine(current, grammar);
       if (!node) {
         finalText = current.text;
         break;
       }
 
       const isOuter = node.startIndex === current.startIndex && node.endIndex === current.endIndex;
-      const result = joinNode(node, working, {
-        maxJoinLength: isOuter ? opts.maxJoinLength : undefined,
-      });
+      const result = joinNode(
+        node,
+        working,
+        {
+          maxJoinLength: isOuter ? opts.maxJoinLength : undefined,
+        },
+        grammar,
+      );
 
       if ('refused' in result) {
         return result;
@@ -146,7 +155,7 @@ export function joinRecursive(
 }
 
 /** A multi-line supported node that contains no other multi-line supported node. */
-function innermostMultiLine(target: SyntaxNode): SyntaxNode | undefined {
-  const candidates = collectSupported(target).filter((n) => !isSingleLine(n));
+function innermostMultiLine(target: SyntaxNode, grammar: GrammarKey): SyntaxNode | undefined {
+  const candidates = collectSupported(target, grammar).filter((n) => !isSingleLine(n));
   return candidates.find((n) => !candidates.some((m) => m !== n && contains(n, m)));
 }

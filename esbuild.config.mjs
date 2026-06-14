@@ -23,7 +23,12 @@ const webTreeSitterCjs = join(repoRoot, 'node_modules', 'web-tree-sitter', 'tree
 export function copyWasm() {
   rmSync(distWasmDir, { recursive: true, force: true });
   mkdirSync(distWasmDir, { recursive: true });
-  const wasmFiles = ['tree-sitter.wasm', 'tree-sitter-typescript.wasm', 'tree-sitter-tsx.wasm'];
+  const wasmFiles = [
+    'tree-sitter.wasm',
+    'tree-sitter-typescript.wasm',
+    'tree-sitter-tsx.wasm',
+    'tree-sitter-php.wasm',
+  ];
   for (const name of wasmFiles) {
     cpSync(join(vendoredWasmDir, name), join(distWasmDir, name));
   }

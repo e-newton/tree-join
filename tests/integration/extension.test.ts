@@ -13,8 +13,8 @@ const COMMANDS = [
 const SINGLE_LINE = 'const xs = [1, 2, 3];';
 const MULTI_LINE = ['const xs = [', '  1,', '  2,', '  3,', '];'].join('\n');
 
-async function openDoc(content: string): Promise<vscode.TextEditor> {
-  const doc = await vscode.workspace.openTextDocument({ content, language: 'typescript' });
+async function openDoc(content: string, language = 'typescript'): Promise<vscode.TextEditor> {
+  const doc = await vscode.workspace.openTextDocument({ content, language });
   const editor = await vscode.window.showTextDocument(doc);
   // Pin indentation so split output is deterministic regardless of the host's
   // default tabSize (untitled docs otherwise default to 4).
@@ -67,6 +67,20 @@ suite('tree-join integration', () => {
       SINGLE_LINE.indexOf('2'),
       `cursor char after join: ${joined.character}`,
     );
+  });
+
+  test('toggles a php array (php grammar activates and loads)', async () => {
+    const single = '<?php $xs = [1, 2, 3];';
+    const multi = ['<?php $xs = [', '  1,', '  2,', '  3,', '];'].join('\n');
+    const editor = await openDoc(single, 'php');
+    const onTwo = new vscode.Position(0, single.indexOf('2'));
+    editor.selection = new vscode.Selection(onTwo, onTwo);
+
+    await runCommand('tree-join.toggle');
+    assert.strictEqual(editor.document.getText(), multi, 'php split text mismatch');
+
+    await runCommand('tree-join.toggle');
+    assert.strictEqual(editor.document.getText(), single, 'php join text mismatch');
   });
 
   test('multi-cursor toggle applies and undoes as one step', async () => {

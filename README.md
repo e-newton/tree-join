@@ -1,8 +1,8 @@
 # Tree Join
 
-Toggle, split, and join TypeScript/JavaScript constructs with a single keystroke — a [tree-sitter](https://tree-sitter.github.io/tree-sitter/)-powered, formatter-friendly analogue of [treesj](https://github.com/Wansmer/treesj) for VSCode.
+Toggle, split, and join TypeScript/JavaScript and PHP constructs with a single keystroke — a [tree-sitter](https://tree-sitter.github.io/tree-sitter/)-powered, formatter-friendly analogue of [treesj](https://github.com/Wansmer/treesj) for VSCode.
 
-Put your cursor anywhere inside an array, object, function call, parameter list, import, JSX tag, or TypeScript type and flip it between its single-line and multi-line form. Output follows Prettier-compatible defaults, so it stays out of your formatter's way.
+Put your cursor anywhere inside an array, object, function call, parameter list, import, JSX tag, TypeScript type, or PHP array/argument list and flip it between its single-line and multi-line form. Output follows Prettier-compatible defaults, so it stays out of your formatter's way.
 
 ![Toggling an array between single-line and multi-line](https://raw.githubusercontent.com/e-newton/tree-join/main/images/toggle.gif)
 
@@ -29,7 +29,7 @@ All commands are available from the Command Palette (`Ctrl/Cmd+Shift+P`). No key
 
 ## Supported node types
 
-Across `typescript`, `typescriptreact`, `javascript`, and `javascriptreact`:
+In `typescript`, `typescriptreact`, `javascript`, and `javascriptreact`:
 
 | Category               | tree-sitter node types                                               |
 | ---------------------- | -------------------------------------------------------------------- |
@@ -40,7 +40,16 @@ Across `typescript`, `typescriptreact`, `javascript`, and `javascriptreact`:
 | **TypeScript types**   | `type_arguments`, `type_parameters`, `tuple_type`, `object_type`     |
 | **JSX**                | attribute list of `jsx_opening_element` / `jsx_self_closing_element` |
 
-Object-like constructs (`object`, `object_pattern`, `object_type`, `named_imports`, `export_clause`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`).
+In `php`:
+
+| Category               | tree-sitter node types                                        |
+| ---------------------- | ------------------------------------------------------------- |
+| **Arrays**             | `array_creation_expression` (both `[…]` and `array(…)` forms) |
+| **Calls & signatures** | `arguments`, `formal_parameters`                              |
+| **Imports**            | `namespace_use_group` (group `use Foo\{A, B}`)                |
+| **Match**              | `match_block`                                                 |
+
+Object-like constructs (`object`, `object_pattern`, `object_type`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`). A PHP group-use list never takes a trailing comma (it is a syntax error there).
 
 ## Settings
 
@@ -60,7 +69,7 @@ No keys are bound out of the box. To bind toggle to `Alt+Shift+J` in TS/JS files
 {
   "key": "alt+shift+j",
   "command": "tree-join.toggle",
-  "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact)$/",
+  "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/",
 }
 ```
 
@@ -71,19 +80,19 @@ Other commands you may want to bind:
   {
     "key": "alt+shift+s",
     "command": "tree-join.split",
-    "when": "editorTextFocus && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact)$/",
+    "when": "editorTextFocus && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/",
   },
   {
     "key": "alt+shift+k",
     "command": "tree-join.join",
-    "when": "editorTextFocus && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact)$/",
+    "when": "editorTextFocus && editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/",
   },
 ]
 ```
 
 ## How it works
 
-Tree Join loads the `web-tree-sitter` WASM runtime plus the TypeScript and TSX grammars on first command invocation. For each cursor it walks up the syntax tree to the innermost supported ancestor, computes the transformed text, and applies all edits in one `WorkspaceEdit` so undo is atomic. Indentation follows the active editor's `tabSize` / `insertSpaces`.
+Tree Join loads the `web-tree-sitter` WASM runtime plus the grammar for the active language (TypeScript, TSX, or PHP) on first command invocation — each grammar is lazy-loaded only when you first run a command in that language. For each cursor it walks up the syntax tree to the innermost supported ancestor, computes the transformed text, and applies all edits in one `WorkspaceEdit` so undo is atomic. Indentation follows the active editor's `tabSize` / `insertSpaces`.
 
 ## Contributing
 

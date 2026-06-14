@@ -95,4 +95,10 @@ suite('tree-join web smoke', () => {
   test('jsx attribute list round-trips', async () => {
     await roundTrip('const el = <Foo a={1} b={2} />;', 'typescriptreact', 'a={1}');
   });
+
+  // This round-trip hits tree-sitter-php.wasm, proving the PHP grammar loads in
+  // the browser worker.
+  test('php array round-trips', async () => {
+    await roundTrip('<?php $xs = [1, 2, 3];', 'php', '2');
+  });
 });

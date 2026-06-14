@@ -1,12 +1,14 @@
 import {
   descriptorFor,
   getChildren,
+  getClosingToken,
   getOpeningToken,
+  isLineComment,
   NodeTypeDescriptor,
   resolveSeparator,
   separatorsFor,
 } from './nodeTypes';
-import { SyntaxNode } from './parseSource';
+import { GrammarKey, SyntaxNode } from './parseSource';
 import { groupIntoRuns, Run } from './runs';
 import { ElementOffsets, Range, TransformSuccess } from './types';
 
@@ -28,6 +30,7 @@ function emitTrailingSeparator(
   descriptor: NodeTypeDescriptor,
   mode: 'add' | 'preserve' | 'never',
 ): boolean {
+  if (descriptor.forbidTrailingSeparator) return false;
   if (mode === 'add') return true;
   if (mode === 'never') return false;
   const separators = separatorsFor(descriptor);
@@ -36,8 +39,13 @@ function emitTrailingSeparator(
   return !!last && separators.includes(last.type);
 }
 
-export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions): TransformSuccess {
-  const descriptor = descriptorFor(node);
+export function splitNode(
+  node: SyntaxNode,
+  source: string,
+  opts: SplitOptions,
+  grammar: GrammarKey,
+): TransformSuccess {
+  const descriptor = descriptorFor(node, grammar);
 
   if (!descriptor) {
     throw new Error('Unable to split: node not supported');
@@ -65,7 +73,8 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
     };
   }
 
-  const firstElementOffsetInNewText = descriptor.openToken.length + 1; // openToken + '\n'
+  const openingToken = getOpeningToken(node, descriptor);
+  const firstElementOffsetInNewText = openingToken.length + 1; // openToken + '\n'
   const separator = resolveSeparator(node, descriptor);
   const trailingSeparator = emitTrailingSeparator(node, descriptor, opts.trailingComma ?? 'add');
   const { strings, elements } = buildElements(
@@ -75,11 +84,12 @@ export function splitNode(node: SyntaxNode, source: string, opts: SplitOptions):
     childIndentTabString,
     firstElementOffsetInNewText,
     trailingSeparator,
+    grammar,
   );
 
   const body = strings.join('\n');
-  const paddedEnd = baseIndent + descriptor.closeToken;
-  const finalString = getOpeningToken(node, descriptor) + '\n' + body + '\n' + paddedEnd;
+  const paddedEnd = baseIndent + getClosingToken(node, descriptor);
+  const finalString = openingToken + '\n' + body + '\n' + paddedEnd;
 
   return { newText: finalString, range, elements };
 }
@@ -101,6 +111,7 @@ function buildElements(
   childIndentTabString: string,
   firstElementOffsetInNewText: number,
   trailingSeparator: boolean,
+  grammar: GrammarKey,
 ): { strings: string[]; elements: ElementOffsets[] } {
   const strings: string[] = [];
   const elements: ElementOffsets[] = [];
@@ -117,8 +128,7 @@ function buildElements(
     // A run ending in a line comment can never take a separator — it would land
     // inside the `//` comment. Any pre-existing separator is already captured in
     // the raw source slice above.
-    const endsWithLineComment =
-      !!lastNode && lastNode.type === 'comment' && lastNode.text.startsWith('//');
+    const endsWithLineComment = !!lastNode && isLineComment(lastNode, grammar);
     // Interior elements always take the separator; the last element follows the
     // resolved trailingComma decision.
     const wantSeparator = (isLast ? trailingSeparator : true) && !endsWithLineComment;
