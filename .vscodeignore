@@ -5,6 +5,7 @@
 out-test/**
 out-test-web/**
 .claude/**
+CLAUDE.md
 src/**
 tests/**
 scripts/**
