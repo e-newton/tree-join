@@ -8,6 +8,7 @@ All notable changes to this extension are documented here. Format: [Keep a Chang
 
 - Commands run in a language with no grammar (or on a document tree-sitter cannot parse) now report why in the status bar instead of doing nothing silently.
 - Multiple cursors resolving into the same construct — or into a construct and one nested inside it — no longer corrupt the document. All commands now collapse overlapping targets to the outermost one; previously only the recursive variants did.
+- `tree-join.joinRecursive` now honours the `tree-join.bracketSpacing` setting. It previously rebuilt the join options for each step and forwarded only `maxJoinLength`, so `bracketSpacing: false` was dropped and every brace — inner and outer — was padded anyway.
 
 ## [1.1.1] - 2026-06-18
 
