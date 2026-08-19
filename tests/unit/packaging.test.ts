@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { NODE_TYPES_BY_GRAMMAR } from '../../src/nodeTypes';
+import { LANGUAGE_ID_TO_GRAMMAR } from '../../src/parseSource';
 
 /** Every distinct tree-sitter node type supported across all grammars. */
 const ALL_NODE_TYPES = Array.from(
@@ -30,7 +31,7 @@ const pkg = JSON.parse(read('package.json')) as {
   bugs: { url: string };
   activationEvents: string[];
   contributes: {
-    commands: { command: string; title: string }[];
+    commands: { command: string; title: string; enablement?: string }[];
     configuration: { properties: Record<string, unknown> };
   };
 };
@@ -48,13 +49,17 @@ const EXPECTED_SETTINGS = [
   'tree-join.trailingComma',
   'tree-join.bracketSpacing',
 ];
-const EXPECTED_LANGUAGES = [
-  'typescript',
-  'typescriptreact',
-  'javascript',
-  'javascriptreact',
-  'php',
-];
+// `LANGUAGE_ID_TO_GRAMMAR` is the single source of truth for which language ids
+// have a grammar behind them. The manifest's activation events, the command
+// `enablement` clauses, and the README's keybinding `when` clauses all restate
+// that list in their own syntax, so each is checked against it here.
+const EXPECTED_LANGUAGES = Object.keys(LANGUAGE_ID_TO_GRAMMAR);
+
+/** Pull the language ids out of an `editorLangId =~ /^(a|b)$/` context clause. */
+const languagesInClause = (clause: string) => {
+  const match = clause.match(/editorLangId\s*=~\s*\/\^\(([^)]*)\)\$\//);
+  return match?.[1]?.split('|') ?? null;
+};
 
 describe('package.json manifest', () => {
   it('is named tree-join with publisher EricNewton (extension id EricNewton.tree-join)', () => {
@@ -95,6 +100,14 @@ describe('package.json manifest', () => {
     expect(ids.sort()).toEqual([...EXPECTED_COMMANDS].sort());
     for (const c of pkg.contributes.commands) {
       expect(c.title.startsWith('Tree Join:')).toBe(true);
+    }
+  });
+
+  it('gates every command on the supported languages so the palette hides them elsewhere', () => {
+    for (const c of pkg.contributes.commands) {
+      const languages = languagesInClause(c.enablement ?? '');
+      expect(languages, `${c.command} needs an editorLangId enablement clause`).not.toBeNull();
+      expect(languages!.slice().sort()).toEqual([...EXPECTED_LANGUAGES].sort());
     }
   });
 
@@ -164,6 +177,19 @@ describe('README', () => {
   it('includes a recommended keybinding snippet for toggle', () => {
     expect(readme).toContain('tree-join.toggle');
     expect(readme).toMatch(/"key":\s*"/);
+  });
+
+  it('scopes every suggested keybinding to the supported languages', () => {
+    const clauses = readme.match(/"when":\s*"([^"]*)"/g) ?? [];
+    expect(clauses.length).toBeGreaterThan(0);
+    for (const clause of clauses) {
+      const languages = languagesInClause(clause);
+      expect(
+        languages,
+        `keybinding \`when\` clause must name the languages: ${clause}`,
+      ).not.toBeNull();
+      expect(languages!.slice().sort()).toEqual([...EXPECTED_LANGUAGES].sort());
+    }
   });
 });
 
