@@ -25,7 +25,7 @@ Put your cursor anywhere inside an array, object, function call, parameter list,
 | `tree-join.splitRecursive` | Tree Join: Split Recursive | Split the target and recurse into supported descendants. |
 | `tree-join.joinRecursive`  | Tree Join: Join Recursive  | Join the target and recurse into supported descendants.  |
 
-All commands are available from the Command Palette (`Ctrl/Cmd+Shift+P`). No keybindings are registered by default — see [Keybindings](#keybindings).
+All commands are available from the Command Palette (`Ctrl/Cmd+Shift+P`) while a supported file is open — in any other language they are hidden, since there is no grammar behind them. No keybindings are registered by default — see [Keybindings](#keybindings).
 
 ## Supported node types
 

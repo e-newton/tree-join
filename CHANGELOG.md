@@ -2,6 +2,12 @@
 
 All notable changes to this extension are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The five Tree Join commands are now hidden in the Command Palette unless the active editor is a language the extension supports (TypeScript, TSX, JavaScript, JSX, and PHP). They previously showed up in every file, where they could only ever be a no-op.
+
 ## [1.1.2] - 2026-08-18
 
 ### Fixed

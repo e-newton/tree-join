@@ -84,23 +84,28 @@
     "commands": [
       {
         "command": "tree-join.toggle",
-        "title": "Tree Join: Toggle"
+        "title": "Tree Join: Toggle",
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
       },
       {
         "command": "tree-join.join",
-        "title": "Tree Join: Join"
+        "title": "Tree Join: Join",
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
       },
       {
         "command": "tree-join.split",
-        "title": "Tree Join: Split"
+        "title": "Tree Join: Split",
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
       },
       {
         "command": "tree-join.splitRecursive",
-        "title": "Tree Join: Split Recursive"
+        "title": "Tree Join: Split Recursive",
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
       },
       {
         "command": "tree-join.joinRecursive",
-        "title": "Tree Join: Join Recursive"
+        "title": "Tree Join: Join Recursive",
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
       }
     ]
   },
