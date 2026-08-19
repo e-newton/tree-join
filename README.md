@@ -38,6 +38,7 @@ In `typescript`, `typescriptreact`, `javascript`, and `javascriptreact`:
 | **Calls & signatures** | `arguments`, `formal_parameters`                                     |
 | **Modules**            | `named_imports`, `export_clause`                                     |
 | **TypeScript types**   | `type_arguments`, `type_parameters`, `tuple_type`, `object_type`     |
+| **TypeScript bodies**  | `interface_body`, `enum_body` (including `const enum`)               |
 | **JSX**                | attribute list of `jsx_opening_element` / `jsx_self_closing_element` |
 
 In `php`:
@@ -56,7 +57,7 @@ In `json` and `jsonc`:
 | -------------- | ---------------------- |
 | **Containers** | `array`, `object`      |
 
-Object-like constructs (`object`, `object_pattern`, `object_type`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`). A PHP group-use list never takes a trailing comma (it is a syntax error there).
+Object-like constructs (`object`, `object_pattern`, `object_type`, `interface_body`, `enum_body`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`). A PHP group-use list never takes a trailing comma (it is a syntax error there).
 
 JSON never takes one either, whatever `tree-join.trailingComma` says: a trailing comma is invalid JSON, and even in `jsonc` the JSON grammar cannot parse one. In `jsonc`, a `//` comment inside the construct refuses a join (it would swallow the rest of the line); a `/* … */` comment joins inline.
 

@@ -11,6 +11,7 @@ All notable changes to this extension are documented here. Format: [Keep a Chang
 - The `tree-sitter-json` WASM grammar, lazy-loaded on first command like the existing grammars. It serves both language ids and adds ~6 KB to the package.
 - JSON-aware split behavior: a split never emits a trailing comma, whatever `tree-join.trailingComma` is set to. One is invalid in strict JSON, and even in `jsonc` the JSON grammar cannot parse it, so the result would be text Tree Join could no longer re-parse.
 - JSONC comment handling: a `//` comment inside the construct refuses a join (joining would swallow the rest of the line), while a `/* … */` comment joins inline.
+- TypeScript `interface` and `enum` bodies are now supported targets. Putting the cursor inside `interface Foo { a: string; b: number }` or `enum E { A, B, C = 3 }` previously did nothing; all five commands now split, join, and toggle them like object literals and type literals. `const enum` works the same way, and interface bodies keep whichever member separator you wrote (`;` or `,`).
 
 ### Changed
 

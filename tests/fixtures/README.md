@@ -1,7 +1,7 @@
 # Fixture corpus
 
 Snapshot fixtures that exercise the split / join / toggle transforms end-to-end
-on real tree-sitter parses. There are **408** `*.in.ts` ↔ `*.out.ts` pairs (300
+on real tree-sitter parses. There are **445** `*.in.ts` ↔ `*.out.ts` pairs (337
 TS/JS/TSX + 69 PHP + 39 JSON/JSONC), driven by `tests/unit/runFixtures.test.ts`
 via the `runFixtures` helper in `tests/runFixtures.ts`.
 
@@ -59,31 +59,34 @@ both refusal codes on join.
 | `type_parameters`          |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `tuple_type`               |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `object_type`              |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `interface_body`           |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `enum_body`                |  ✓³   |  ✓³  |   ✓    | width, lineComment |
 | `jsx_opening_element`      |  ✓²   |  ✓²  |   ✓    | width, lineComment |
 | `jsx_self_closing_element` |  ✓²   |  ✓²  |   ✓    | width, lineComment |
 
 ¹ `array` and `object` share the `split/literals` and `join/literals` dirs.
 ² JSX attribute lists share the `split/jsx_attributes` and `join/jsx_attributes`
 dirs; refusals live in `join/jsx_attributes-refused-*`.
+³ `enum_body` covers both `enum` and `const enum` (they parse to the same node).
 
 ### PHP (`php` grammar, `*-php` dirs)
 
 | Node type                    | Split | Join | Toggle | Join refusals      |
 | ---------------------------- | :---: | :--: | :----: | ------------------ |
-| `array_creation_expression`³ |   ✓   |  ✓   |   ✓    | width, lineComment |
-| `list_literal`⁴              |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `array_creation_expression`⁴ |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `list_literal`⁵              |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `arguments`                  |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `formal_parameters`          |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `namespace_use_group`        |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `match_block`                |   ✓   |  ✓   |   ✓    | width, lineComment |
 
-³ Covers both the `[…]` and legacy `array(…)` surface forms. The
+⁴ Covers both the `[…]` and legacy `array(…)` surface forms. The
 `*-refused-line-comment` dirs cover both `//` and `#` PHP line comments.
 `namespace_use_group` never emits a trailing comma on split (a syntax error
 there); the `split-php/trailing-comma-*` and `split-php/array-tabs` dirs cover
 the settings on PHP arrays.
 
-⁴ Array destructuring targets — both `[$a, $b] = $c` and legacy
+⁵ Array destructuring targets — both `[$a, $b] = $c` and legacy
 `list($a, $b) = $c`. Unlike `array_creation_expression`, a keyed element exposes
 its key and target as two sibling named children around an anonymous `=>`, so
 the `keyed` pairs guard that the arrow survives a join; `by-reference` and

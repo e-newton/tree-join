@@ -294,6 +294,23 @@ for (const type of ['type_arguments', 'type_parameters', 'tuple_type', 'object_t
   );
 }
 
+// --- TypeScript declaration bodies ---
+for (const type of ['interface_body', 'enum_body']) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split/${type}`, import.meta.url),
+    runSplit,
+  );
+  runFixtures<Partial<JoinOptions>>(new URL(`../fixtures/join/${type}`, import.meta.url), runJoin);
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join/${type}-refused-line-comment`, import.meta.url),
+    runJoin,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join/${type}-refused-width`, import.meta.url),
+    runJoin,
+  );
+}
+
 // --- T-14: Settings wiring ---
 for (const mode of ['add', 'preserve', 'never']) {
   runFixtures<Partial<SplitOptions>>(
@@ -447,6 +464,8 @@ for (const type of [
   'type_parameters',
   'tuple_type',
   'object_type',
+  'interface_body',
+  'enum_body',
 ]) {
   runFixtures<ToggleOptions>(new URL(`../fixtures/toggle/${type}`, import.meta.url), runToggle);
 }
