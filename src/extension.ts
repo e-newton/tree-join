@@ -4,19 +4,32 @@ import { findTarget } from './select';
 import { toParserPoint } from './helpers';
 import { joinNode, JoinOptions } from './join';
 import { applyTransforms } from './apply';
-import { JoinRefusal, TransformResult } from './types';
+import { TransformResult } from './types';
 import { splitNode, SplitOptions } from './split';
 import { joinRecursive, Reparse, splitRecursive } from './recursive';
 import { GrammarKey, LANGUAGE_ID_TO_GRAMMAR, SyntaxNode } from './parseSource';
 import { joinOptionsFor, splitOptionsFor } from './config';
+import {
+  formatStatus,
+  NO_TARGET_MESSAGE,
+  PARSE_FAILED_MESSAGE,
+  REFUSAL_MESSAGES,
+  UNSUPPORTED_LANGUAGE_MESSAGE,
+} from './status';
 
 type NoTarget = { kind: 'noTarget' };
 type CursorOutcome = TransformResult | NoTarget;
 
-const REFUSAL_MESSAGES: Record<JoinRefusal['refused'], string> = {
-  lineComment: 'cannot join — line comment',
-  width: 'cannot join — exceeds max line length',
-};
+const STATUS_TIMEOUT_MS = 3000;
+
+/**
+ * Report to the status bar. Every path that declines to transform goes through
+ * here — a command that silently does nothing is indistinguishable from a
+ * broken extension.
+ */
+function notify(...messages: string[]): void {
+  vscode.window.setStatusBarMessage(formatStatus(messages), STATUS_TIMEOUT_MS);
+}
 
 type TransformPicker = (
   node: SyntaxNode,
@@ -67,16 +80,15 @@ async function runOnCursors(pick: TransformPicker): Promise<void> {
     return;
   }
   const parser = await parserFor(editor.document.languageId);
-  if (!parser) {
-    return;
-  }
   const grammar = LANGUAGE_ID_TO_GRAMMAR[editor.document.languageId];
-  if (!grammar) {
+  if (!parser || !grammar) {
+    notify(UNSUPPORTED_LANGUAGE_MESSAGE);
     return;
   }
   const source = editor.document.getText();
   const tree = parser.parse(source);
   if (!tree) {
+    notify(PARSE_FAILED_MESSAGE);
     return;
   }
   try {
@@ -105,13 +117,13 @@ async function runOnCursors(pick: TransformPicker): Promise<void> {
     const messages = new Set<string>();
     for (const outcome of outcomes) {
       if ('kind' in outcome) {
-        messages.add('no splittable node');
+        messages.add(NO_TARGET_MESSAGE);
       } else if ('refused' in outcome) {
         messages.add(REFUSAL_MESSAGES[outcome.refused]);
       }
     }
     if (messages.size) {
-      vscode.window.setStatusBarMessage(`tree-join: ${Array.from(messages).join(' | ')}`, 3000);
+      notify(...messages);
     }
   } finally {
     tree.delete();
