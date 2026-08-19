@@ -114,6 +114,21 @@ suite('tree-join integration', () => {
     assert.strictEqual(editor.document.getText(), MULTI_LINE, 'duplicate targets did not collapse');
   });
 
+  // The status-bar text itself is not readable through the VSCode API, so this
+  // asserts the observable half: the command runs to completion in a language
+  // with no grammar and leaves the document alone. Message wording and
+  // formatting are covered by tests/unit/status.test.ts.
+  test('a command in an unsupported language is a no-op, not a crash', async () => {
+    const content = 'x = [1, 2, 3]';
+    const editor = await openDoc(content, 'python');
+    editor.selections = [
+      new vscode.Selection(new vscode.Position(0, 6), new vscode.Position(0, 6)),
+    ];
+
+    await runCommand('tree-join.toggle');
+    assert.strictEqual(editor.document.getText(), content, 'python document was modified');
+  });
+
   // Regression: a cursor in a nested construct sits inside its parent's range,
   // so the inner edit used to be applied against stale offsets.
   test('cursors in nested constructs transform only the outermost', async () => {
