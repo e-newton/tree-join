@@ -8,19 +8,21 @@ carries a tag exactly equal to `v<package.json version>`.
 
 ## Registry status
 
-| Registry           | Command        | Status                                                                                                                       |
-| ------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Open VSX**       | `ovsx publish` | **Active.** Publish here. Used by VSCodium, Gitpod, Cursor, etc.                                                             |
-| VSCode Marketplace | `vsce publish` | Blocked at the account level (publisher flagged "suspicious content"). Do not dispatch `marketplace` until that is resolved. |
+| Registry               | Command        | Status                                                                                                                   |
+| ---------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **VSCode Marketplace** | `vsce publish` | **Active** as of v1.1.1. The earlier account-level "suspicious content" block on the `EricNewton` publisher is resolved. |
+| **Open VSX**           | `ovsx publish` | **Active.** Used by VSCodium, Gitpod, Cursor, etc.                                                                       |
 
-So for now: **dispatch the workflow with `registries: openvsx`.**
+Both registries are live, so **dispatch the workflow with `registries: both`** and
+keep the two in step. The `marketplace` / `openvsx` choices remain for re-running a
+single registry when one of them fails a dispatch.
 
 ## Prerequisites (one-time)
 
-- Repo secret **`OVSX_PAT`** — an Open VSX access token (configured).
+- Repo secrets **`VSCE_PAT`** (Marketplace) and **`OVSX_PAT`** (Open VSX) — both
+  configured. A PAT that has expired is the usual cause of a publish step failing.
 - The Open VSX **`EricNewton` namespace** must exist and the Eclipse Foundation
   Publisher Agreement must be signed for that account, or `ovsx publish` 403s.
-- `VSCE_PAT` is also configured but unused while the Marketplace is blocked.
 
 ## Cutting a release (`vX.Y.Z`)
 
@@ -35,12 +37,16 @@ So for now: **dispatch the workflow with `registries: openvsx`.**
    ```
 3. **Actions → Release → Run workflow**, then set:
    - **Use workflow from:** the `vX.Y.Z` tag (not a branch), and
-   - **registries:** `openvsx`.
-     Or from the CLI: `gh workflow run release.yml --ref vX.Y.Z -f registries=openvsx`.
+   - **registries:** `both`.
+     Or from the CLI: `gh workflow run release.yml --ref vX.Y.Z -f registries=both`.
 4. The job verifies `HEAD` is on `vX.Y.Z`, runs CI, packages the `.vsix`, and
-   publishes to Open VSX.
-5. Verify at `https://open-vsx.org/extension/EricNewton/tree-join` (the new
-   version should appear within a minute or two).
+   publishes it to the selected registries.
+5. Verify both listings show the new version:
+   - `https://marketplace.visualstudio.com/items?itemName=EricNewton.tree-join`
+     (Marketplace runs a validation scan, so it can take a few minutes and the
+     version appears as "verifying" until it passes)
+   - `https://open-vsx.org/extension/EricNewton/tree-join` (usually within a
+     minute or two)
 
 ## Local sanity check
 
