@@ -136,6 +136,9 @@ export function joinRecursive(
         node,
         working,
         {
+          ...opts,
+          // Width is enforced only on the final outer line; inner joins are
+          // allowed to overflow since the outer join re-checks the whole line.
           maxJoinLength: isOuter ? opts.maxJoinLength : undefined,
         },
         grammar,

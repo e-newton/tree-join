@@ -1,7 +1,7 @@
 # Fixture corpus
 
 Snapshot fixtures that exercise the split / join / toggle transforms end-to-end
-on real tree-sitter parses. There are **348** `*.in.ts` ↔ `*.out.ts` pairs (299
+on real tree-sitter parses. There are **349** `*.in.ts` ↔ `*.out.ts` pairs (300
 TS/JS/TSX + 49 PHP), driven by `tests/unit/runFixtures.test.ts` via the
 `runFixtures` helper in `tests/runFixtures.ts`.
 
