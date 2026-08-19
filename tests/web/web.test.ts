@@ -101,4 +101,13 @@ suite('tree-join web smoke', () => {
   test('php array round-trips', async () => {
     await roundTrip('<?php $xs = [1, 2, 3];', 'php', '2');
   });
+
+  // These hit tree-sitter-json.wasm through both language ids that share it.
+  test('json object round-trips', async () => {
+    await roundTrip('{ "a": 1, "b": 2 }', 'json', '"a"');
+  });
+
+  test('jsonc array round-trips', async () => {
+    await roundTrip('[1, 2, 3]', 'jsonc', '2');
+  });
 });

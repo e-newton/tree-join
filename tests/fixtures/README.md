@@ -1,9 +1,9 @@
 # Fixture corpus
 
 Snapshot fixtures that exercise the split / join / toggle transforms end-to-end
-on real tree-sitter parses. There are **406** `*.in.ts` ↔ `*.out.ts` pairs (337
-TS/JS/TSX + 69 PHP), driven by `tests/unit/runFixtures.test.ts` via the
-`runFixtures` helper in `tests/runFixtures.ts`.
+on real tree-sitter parses. There are **445** `*.in.ts` ↔ `*.out.ts` pairs (337
+TS/JS/TSX + 69 PHP + 39 JSON/JSONC), driven by `tests/unit/runFixtures.test.ts`
+via the `runFixtures` helper in `tests/runFixtures.ts`.
 
 ## How a fixture works
 
@@ -22,6 +22,9 @@ Conventions:
 - **PHP content also lives in `.in.ts` files** in the `*-php` dirs (the `.in.ts`
   suffix is the harness's, not the language's); the harness parses them with the
   `php` grammar. PHP inputs begin with `<?php`.
+- **JSON content also lives in `.in.ts` files** in the `*-json` / `*-jsonc` dirs;
+  the harness parses them with the `json` grammar (both language ids share it).
+  The `*-jsonc` dirs go through the `jsonc` language id specifically.
 - **Refusals** (join guards) render as a single line `// REFUSED: <code>` in the
   `.out.ts`, where `<code>` is `width` or `lineComment`.
 - **Toggle idempotency:** a toggle fixture applies the toggle twice (split then
@@ -89,6 +92,21 @@ its key and target as two sibling named children around an anonymous `=>`, so
 the `keyed` pairs guard that the arrow survives a join; `by-reference` and
 `skipped-slot` cover `&$b` targets and empty slots.
 
+### JSON / JSONC (`json` grammar, `*-json` and `*-jsonc` dirs)
+
+| Node type | Split | Join | Toggle | Join refusals      |
+| --------- | :---: | :--: | :----: | ------------------ |
+| `array`   |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `object`  |   ✓   |  ✓   |   ✓    | width, lineComment |
+
+Neither type ever emits a trailing separator: one is invalid in strict JSON and
+`tree-sitter-json` cannot parse it even in JSONC, so `split-json/trailing-comma-*`
+asserts that all three `trailingComma` modes agree on omitting it.
+`split-json/object-tabs` and `join-json/bracket-spacing-off` cover the other two
+settings. The `*-jsonc` dirs run the `jsonc` language id: a block comment
+survives a join, a `//` comment refuses one, and
+`split-recursive-json/single-pair-skipped` pins the single-element skip rule.
+
 ## Directory layout
 
 ```
@@ -112,6 +130,15 @@ join-php/<node_type>/           # PHP force-join per node type
 join-php/<node_type>-refused-{width,line-comment}/   # PHP join refusals
 toggle-php/<node_type>/         # PHP round-trip idempotency
 split-recursive-php/  join-recursive-php/   # PHP recursive variants
+split-json/<node_type>/         # JSON force-split per node type
+split-json/object-tabs/         # JSON tab-indented split
+split-json/trailing-comma-{add,never,preserve}/   # all three omit the separator
+join-json/<node_type>/          # JSON force-join per node type
+join-json/<node_type>-refused-{width,line-comment}/  # JSON join refusals
+join-json/bracket-spacing-off/  # JSON bracketSpacing setting
+toggle-json/<node_type>/        # JSON round-trip idempotency
+split-recursive-json/  join-recursive-json/  # JSON recursive variants
+split-jsonc/  join-jsonc/  toggle-jsonc/    # the `jsonc` language id + comments
 sample/                         # no-op fixture proving the harness
 ```
 
