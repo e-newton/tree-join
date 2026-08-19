@@ -1,8 +1,8 @@
 # Fixture corpus
 
 Snapshot fixtures that exercise the split / join / toggle transforms end-to-end
-on real tree-sitter parses. There are **386** `*.in.ts` ↔ `*.out.ts` pairs (337
-TS/JS/TSX + 49 PHP), driven by `tests/unit/runFixtures.test.ts` via the
+on real tree-sitter parses. There are **406** `*.in.ts` ↔ `*.out.ts` pairs (337
+TS/JS/TSX + 69 PHP), driven by `tests/unit/runFixtures.test.ts` via the
 `runFixtures` helper in `tests/runFixtures.ts`.
 
 ## How a fixture works
@@ -71,6 +71,7 @@ dirs; refusals live in `join/jsx_attributes-refused-*`.
 | Node type                    | Split | Join | Toggle | Join refusals      |
 | ---------------------------- | :---: | :--: | :----: | ------------------ |
 | `array_creation_expression`⁴ |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `list_literal`⁵              |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `arguments`                  |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `formal_parameters`          |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `namespace_use_group`        |   ✓   |  ✓   |   ✓    | width, lineComment |
@@ -81,6 +82,12 @@ dirs; refusals live in `join/jsx_attributes-refused-*`.
 `namespace_use_group` never emits a trailing comma on split (a syntax error
 there); the `split-php/trailing-comma-*` and `split-php/array-tabs` dirs cover
 the settings on PHP arrays.
+
+⁵ Array destructuring targets — both `[$a, $b] = $c` and legacy
+`list($a, $b) = $c`. Unlike `array_creation_expression`, a keyed element exposes
+its key and target as two sibling named children around an anonymous `=>`, so
+the `keyed` pairs guard that the arrow survives a join; `by-reference` and
+`skipped-slot` cover `&$b` targets and empty slots.
 
 ## Directory layout
 

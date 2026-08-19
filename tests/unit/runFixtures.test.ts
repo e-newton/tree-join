@@ -463,6 +463,7 @@ for (const type of ['jsx_opening_element', 'jsx_self_closing_element']) {
 // harness's, not the language's) and are parsed with the `php` grammar.
 const PHP_NODE_TYPES = [
   'array_creation_expression',
+  'list_literal',
   'arguments',
   'formal_parameters',
   'namespace_use_group',

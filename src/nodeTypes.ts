@@ -31,6 +31,15 @@ export interface NodeTypeDescriptor {
    * instead of the static `openToken`/`closeToken` (which remain the fallback).
    */
   delimiters?: (node: SyntaxNode) => { open: string; close: string };
+  /**
+   * Anonymous tokens that belong *inside* an element rather than between
+   * elements. Normally every element is a single named child, so the tokens
+   * separating named children can be discarded; PHP's `list_literal` breaks
+   * that assumption — `['a' => $x]` exposes the key and the target as two
+   * sibling named children with an anonymous `=>` between them, which a join
+   * would otherwise drop. Listing the token here keeps it in the element.
+   */
+  elementTokens?: string[];
 }
 
 /** A per-grammar map from tree-sitter node type to its descriptor. */
@@ -190,6 +199,22 @@ const PHP_NODE_TYPES: DescriptorTable = {
     delimiters: (node) =>
       node.children[0]?.type === '[' ? { open: '[', close: ']' } : { open: 'array(', close: ')' },
   },
+  // Destructuring target: `[$a, $b] = $c` and the legacy `list($a, $b) = $c`
+  // both parse to this node (never to `array_creation_expression`). As above,
+  // the two surface forms differ only in their brackets. A trailing comma is
+  // valid here — destructuring reuses the array-pair grammar, which has always
+  // accepted one.
+  list_literal: {
+    type: 'list_literal',
+    openToken: '[',
+    closeToken: ']',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+    elementTokens: ['=>'],
+    delimiters: (node) =>
+      node.children[0]?.type === '[' ? { open: '[', close: ']' } : { open: 'list(', close: ')' },
+  },
   arguments: {
     type: 'arguments',
     openToken: '(',
@@ -324,9 +349,13 @@ export function getClosingToken(node: SyntaxNode, descriptor: NodeTypeDescriptor
 export function getChildren(node: SyntaxNode, descriptor: NodeTypeDescriptor): SyntaxNode[] {
   if (descriptor.elementsField.kind === 'named-children') {
     const separators = separatorsFor(descriptor);
+    const elementTokens = descriptor.elementTokens ?? [];
     return node.children.filter(
       (childNode): childNode is SyntaxNode =>
-        !!childNode && (childNode.isNamed || separators.includes(childNode.type)),
+        !!childNode &&
+        (childNode.isNamed ||
+          separators.includes(childNode.type) ||
+          elementTokens.includes(childNode.type)),
     );
   }
 

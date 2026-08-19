@@ -6,7 +6,13 @@ All notable changes to this extension are documented here. Format: [Keep a Chang
 
 ### Added
 
+- **PHP array destructuring.** All commands now work on a destructuring target — `[$a, $b] = $c` and the legacy `list($a, $b) = $c` — including the keyed form `['a' => $x, 'b' => $y] = $row`, by-reference targets, and skipped slots. These parse as `list_literal`, not `array_creation_expression`, so they were previously unsupported even though PHP arrays were.
 - TypeScript `interface` and `enum` bodies are now supported targets. Putting the cursor inside `interface Foo { a: string; b: number }` or `enum E { A, B, C = 3 }` previously did nothing; all five commands now split, join, and toggle them like object literals and type literals. `const enum` works the same way, and interface bodies keep whichever member separator you wrote (`;` or `,`).
+
+### Changed
+
+- The five Tree Join commands are now hidden in the Command Palette unless the active editor is a language the extension supports (TypeScript, TSX, JavaScript, JSX, and PHP). They previously showed up in every file, where they could only ever be a no-op.
+- Updated the build and test toolchain (esbuild, prettier, typescript-eslint, mocha, the `@vscode/test-*` and `vsce` tooling, and the `@types/vscode` typings) to current releases. No change to extension behaviour; the shipped bundle is the same size as before and still unminified.
 
 ## [1.1.2] - 2026-08-18
 
