@@ -2,6 +2,12 @@
 
 All notable changes to this extension are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Multiple cursors resolving into the same construct — or into a construct and one nested inside it — no longer corrupt the document. All commands now collapse overlapping targets to the outermost one; previously only the recursive variants did.
+
 ## [1.1.1] - 2026-06-18
 
 ### Fixed

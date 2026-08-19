@@ -100,4 +100,32 @@ suite('tree-join integration', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.strictEqual(editor.document.getText(), content, 'single undo did not revert both edits');
   });
+
+  // Regression: two cursors resolving into the same node used to emit two
+  // overlapping edits in one WorkspaceEdit, shredding the document.
+  test('two cursors in the same construct split it once', async () => {
+    const editor = await openDoc(SINGLE_LINE);
+    editor.selections = [
+      new vscode.Selection(new vscode.Position(0, 12), new vscode.Position(0, 12)),
+      new vscode.Selection(new vscode.Position(0, 15), new vscode.Position(0, 15)),
+    ];
+
+    await runCommand('tree-join.toggle');
+    assert.strictEqual(editor.document.getText(), MULTI_LINE, 'duplicate targets did not collapse');
+  });
+
+  // Regression: a cursor in a nested construct sits inside its parent's range,
+  // so the inner edit used to be applied against stale offsets.
+  test('cursors in nested constructs transform only the outermost', async () => {
+    const editor = await openDoc('const xs = [1, [2, 3], 4];');
+    editor.selections = [
+      // Outer array, then inside the nested `[2, 3]`.
+      new vscode.Selection(new vscode.Position(0, 12), new vscode.Position(0, 12)),
+      new vscode.Selection(new vscode.Position(0, 16), new vscode.Position(0, 16)),
+    ];
+
+    await runCommand('tree-join.toggle');
+    const expected = ['const xs = [', '  1,', '  [2, 3],', '  4,', '];'].join('\n');
+    assert.strictEqual(editor.document.getText(), expected, 'nested targets did not collapse');
+  });
 });

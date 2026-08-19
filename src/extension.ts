@@ -28,9 +28,14 @@ type TransformPicker = (
 ) => TransformResult;
 
 /**
- * Drop targets nested inside another resolved target (keep the outermost — its
- * recursion subsumes the inner cursor's intent) and collapse exact duplicates,
- * so concurrent cursors never produce overlapping edits.
+ * Drop targets nested inside another resolved target and collapse exact
+ * duplicates, so concurrent cursors never produce overlapping edits — two
+ * cursors in one construct resolve to the same node, and a cursor in a nested
+ * construct resolves inside its parent's range. A `WorkspaceEdit` cannot apply
+ * either pair coherently (both would rewrite the same text), so the outermost
+ * target wins: for the recursive commands its recursion subsumes the inner
+ * cursor's intent, and for the plain ones it is the transform the user can
+ * still see happen.
  */
 function dedupTargets(targets: (SyntaxNode | undefined)[]): (SyntaxNode | undefined)[] {
   const defined = targets.filter((n): n is SyntaxNode => !!n);
@@ -56,7 +61,7 @@ function dedupTargets(targets: (SyntaxNode | undefined)[]): (SyntaxNode | undefi
   return targets.some((n) => !n) ? [undefined, ...unique] : unique;
 }
 
-async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void> {
+async function runOnCursors(pick: TransformPicker): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return;
@@ -83,12 +88,9 @@ async function runOnCursors(pick: TransformPicker, dedup = false): Promise<void>
       return next;
     };
 
-    let targets = editor.selections.map((sel) =>
-      findTarget(tree, toParserPoint(sel.active), grammar),
+    const targets = dedupTargets(
+      editor.selections.map((sel) => findTarget(tree, toParserPoint(sel.active), grammar)),
     );
-    if (dedup) {
-      targets = dedupTargets(targets);
-    }
 
     const outcomes: CursorOutcome[] = targets.map((node) => {
       if (!node) {
@@ -138,17 +140,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       ),
     ),
     vscode.commands.registerCommand('tree-join.splitRecursive', () =>
-      runOnCursors(
-        (node, source, splitOpts, _joinOpts, parse, grammar) =>
-          splitRecursive(node, source, splitOpts, parse, grammar),
-        true,
+      runOnCursors((node, source, splitOpts, _joinOpts, parse, grammar) =>
+        splitRecursive(node, source, splitOpts, parse, grammar),
       ),
     ),
     vscode.commands.registerCommand('tree-join.joinRecursive', () =>
-      runOnCursors(
-        (node, source, _splitOpts, joinOpts, parse, grammar) =>
-          joinRecursive(node, source, joinOpts, parse, grammar),
-        true,
+      runOnCursors((node, source, _splitOpts, joinOpts, parse, grammar) =>
+        joinRecursive(node, source, joinOpts, parse, grammar),
       ),
     ),
   );
