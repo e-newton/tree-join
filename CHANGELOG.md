@@ -4,6 +4,10 @@ All notable changes to this extension are documented here. Format: [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- **PHP array destructuring.** All commands now work on a destructuring target — `[$a, $b] = $c` and the legacy `list($a, $b) = $c` — including the keyed form `['a' => $x, 'b' => $y] = $row`, by-reference targets, and skipped slots. These parse as `list_literal`, not `array_creation_expression`, so they were previously unsupported even though PHP arrays were.
+
 ### Changed
 
 - The five Tree Join commands are now hidden in the Command Palette unless the active editor is a language the extension supports (TypeScript, TSX, JavaScript, JSX, and PHP). They previously showed up in every file, where they could only ever be a no-op.

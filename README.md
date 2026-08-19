@@ -45,6 +45,7 @@ In `php`:
 | Category               | tree-sitter node types                                        |
 | ---------------------- | ------------------------------------------------------------- |
 | **Arrays**             | `array_creation_expression` (both `[…]` and `array(…)` forms) |
+| **Destructuring**      | `list_literal` (both `[…]` and `list(…)` forms)               |
 | **Calls & signatures** | `arguments`, `formal_parameters`                              |
 | **Imports**            | `namespace_use_group` (group `use Foo\{A, B}`)                |
 | **Match**              | `match_block`                                                 |
