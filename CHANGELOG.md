@@ -2,7 +2,7 @@
 
 All notable changes to this extension are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-08-19
 
 ### Added
 
@@ -70,7 +70,7 @@ First public release.
 - **Quality tooling:** ESLint (flat config, `typescript-eslint` recommended-type-checked tier) and Prettier with project-wide formatting; `lint`, `lint:fix`, `format`, and `format:check` npm scripts; a `simple-git-hooks` + `lint-staged` pre-commit hook running Prettier on staged files.
 - **Test suites:** ~300 `*.in.ts`/`*.out.ts` fixture snapshots, an `@vscode/test-electron` integration smoke, and an `@vscode/test-web` headless browser smoke, all run in CI.
 
-[unreleased]: https://github.com/e-newton/tree-join/compare/v1.1.2...HEAD
+[1.2.0]: https://github.com/e-newton/tree-join/releases/tag/v1.2.0
 [1.1.2]: https://github.com/e-newton/tree-join/releases/tag/v1.1.2
 [1.1.1]: https://github.com/e-newton/tree-join/releases/tag/v1.1.1
 [1.1.0]: https://github.com/e-newton/tree-join/releases/tag/v1.1.0
