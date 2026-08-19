@@ -38,6 +38,7 @@ In `typescript`, `typescriptreact`, `javascript`, and `javascriptreact`:
 | **Calls & signatures** | `arguments`, `formal_parameters`                                     |
 | **Modules**            | `named_imports`, `export_clause`                                     |
 | **TypeScript types**   | `type_arguments`, `type_parameters`, `tuple_type`, `object_type`     |
+| **TypeScript bodies**  | `interface_body`, `enum_body` (including `const enum`)               |
 | **JSX**                | attribute list of `jsx_opening_element` / `jsx_self_closing_element` |
 
 In `php`:
@@ -49,7 +50,7 @@ In `php`:
 | **Imports**            | `namespace_use_group` (group `use Foo\{A, B}`)                |
 | **Match**              | `match_block`                                                 |
 
-Object-like constructs (`object`, `object_pattern`, `object_type`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`). A PHP group-use list never takes a trailing comma (it is a syntax error there).
+Object-like constructs (`object`, `object_pattern`, `object_type`, `interface_body`, `enum_body`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`). A PHP group-use list never takes a trailing comma (it is a syntax error there).
 
 ## Settings
 

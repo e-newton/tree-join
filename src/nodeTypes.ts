@@ -154,6 +154,26 @@ const TS_NODE_TYPES: DescriptorTable = {
     bracketSpacing: true,
     elementsField: { kind: 'named-children' },
   },
+  // `interface Foo { … }` member list. Like `object_type`, the grammar accepts
+  // both `;` and `,` between members.
+  interface_body: {
+    type: 'interface_body',
+    openToken: '{',
+    closeToken: '}',
+    separator: ';',
+    separators: [';', ','],
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
+  // `enum E { … }` / `const enum E { … }` member list — both parse to this node.
+  enum_body: {
+    type: 'enum_body',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+  },
 };
 
 /** PHP constructs. */

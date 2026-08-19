@@ -1,0 +1,4 @@
+enum LongName {
+  Alpha,
+  Bravo,
+}

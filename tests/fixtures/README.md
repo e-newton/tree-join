@@ -1,7 +1,7 @@
 # Fixture corpus
 
 Snapshot fixtures that exercise the split / join / toggle transforms end-to-end
-on real tree-sitter parses. There are **349** `*.in.ts` ↔ `*.out.ts` pairs (300
+on real tree-sitter parses. There are **386** `*.in.ts` ↔ `*.out.ts` pairs (337
 TS/JS/TSX + 49 PHP), driven by `tests/unit/runFixtures.test.ts` via the
 `runFixtures` helper in `tests/runFixtures.ts`.
 
@@ -56,24 +56,27 @@ both refusal codes on join.
 | `type_parameters`          |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `tuple_type`               |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `object_type`              |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `interface_body`           |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `enum_body`                |  ✓³   |  ✓³  |   ✓    | width, lineComment |
 | `jsx_opening_element`      |  ✓²   |  ✓²  |   ✓    | width, lineComment |
 | `jsx_self_closing_element` |  ✓²   |  ✓²  |   ✓    | width, lineComment |
 
 ¹ `array` and `object` share the `split/literals` and `join/literals` dirs.
 ² JSX attribute lists share the `split/jsx_attributes` and `join/jsx_attributes`
 dirs; refusals live in `join/jsx_attributes-refused-*`.
+³ `enum_body` covers both `enum` and `const enum` (they parse to the same node).
 
 ### PHP (`php` grammar, `*-php` dirs)
 
 | Node type                    | Split | Join | Toggle | Join refusals      |
 | ---------------------------- | :---: | :--: | :----: | ------------------ |
-| `array_creation_expression`³ |   ✓   |  ✓   |   ✓    | width, lineComment |
+| `array_creation_expression`⁴ |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `arguments`                  |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `formal_parameters`          |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `namespace_use_group`        |   ✓   |  ✓   |   ✓    | width, lineComment |
 | `match_block`                |   ✓   |  ✓   |   ✓    | width, lineComment |
 
-³ Covers both the `[…]` and legacy `array(…)` surface forms. The
+⁴ Covers both the `[…]` and legacy `array(…)` surface forms. The
 `*-refused-line-comment` dirs cover both `//` and `#` PHP line comments.
 `namespace_use_group` never emits a trailing comma on split (a syntax error
 there); the `split-php/trailing-comma-*` and `split-php/array-tabs` dirs cover
