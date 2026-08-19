@@ -2,7 +2,7 @@ import { Language, Parser } from 'web-tree-sitter';
 
 export type { Node as SyntaxNode, Point, Tree } from 'web-tree-sitter';
 
-export type GrammarKey = 'typescript' | 'tsx' | 'php';
+export type GrammarKey = 'typescript' | 'tsx' | 'php' | 'json';
 
 export const LANGUAGE_ID_TO_GRAMMAR: Record<string, GrammarKey> = {
   typescript: 'typescript',
@@ -10,12 +10,17 @@ export const LANGUAGE_ID_TO_GRAMMAR: Record<string, GrammarKey> = {
   typescriptreact: 'tsx',
   javascriptreact: 'tsx',
   php: 'php',
+  // `json` and `jsonc` share one grammar: tree-sitter-json treats `comment` as
+  // an extra, so JSON with comments parses with the same WASM.
+  json: 'json',
+  jsonc: 'json',
 };
 
 export const GRAMMAR_FILE: Record<GrammarKey, string> = {
   typescript: 'tree-sitter-typescript.wasm',
   tsx: 'tree-sitter-tsx.wasm',
   php: 'tree-sitter-php.wasm',
+  json: 'tree-sitter-json.wasm',
 };
 
 export async function parseSource(

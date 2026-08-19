@@ -29,6 +29,13 @@ const GRAMMAR_SOURCES = [
     // interleaved text); `php_only` is the text-free variant we don't use.
     grammars: [{ subdir: 'php', name: 'php' }],
   },
+  {
+    repo: 'https://github.com/tree-sitter/tree-sitter-json.git',
+    tag: 'v0.24.8',
+    // One grammar serves both the `json` and `jsonc` language ids: it already
+    // treats `comment` as an extra, so JSON with comments parses too.
+    grammars: [{ subdir: '.', name: 'json' }],
+  },
 ];
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
