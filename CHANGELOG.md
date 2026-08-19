@@ -7,6 +7,7 @@ All notable changes to this extension are documented here. Format: [Keep a Chang
 ### Changed
 
 - The five Tree Join commands are now hidden in the Command Palette unless the active editor is a language the extension supports (TypeScript, TSX, JavaScript, JSX, and PHP). They previously showed up in every file, where they could only ever be a no-op.
+- Updated the build and test toolchain (esbuild, prettier, typescript-eslint, mocha, the `@vscode/test-*` and `vsce` tooling, and the `@types/vscode` typings) to current releases. No change to extension behaviour; the shipped bundle is the same size as before and still unminified.
 
 ## [1.1.2] - 2026-08-18
 
