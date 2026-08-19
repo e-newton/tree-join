@@ -233,6 +233,36 @@ const PHP_NODE_TYPES: DescriptorTable = {
 };
 
 /**
+ * JSON / JSONC constructs. One grammar serves both language ids; `tree-sitter-json`
+ * treats `comment` as an extra, so `//` and block comments parse in either.
+ *
+ * Neither construct may take a trailing separator: it is invalid in strict JSON,
+ * and `tree-sitter-json` cannot parse one even in JSONC (`{"a": 1,}` yields an
+ * ERROR node), so emitting one would produce text this extension can no longer
+ * re-parse. `forbidTrailingSeparator` overrides `tree-join.trailingComma` here.
+ */
+const JSON_NODE_TYPES: DescriptorTable = {
+  array: {
+    type: 'array',
+    openToken: '[',
+    closeToken: ']',
+    separator: ',',
+    bracketSpacing: false,
+    elementsField: { kind: 'named-children' },
+    forbidTrailingSeparator: true,
+  },
+  object: {
+    type: 'object',
+    openToken: '{',
+    closeToken: '}',
+    separator: ',',
+    bracketSpacing: true,
+    elementsField: { kind: 'named-children' },
+    forbidTrailingSeparator: true,
+  },
+};
+
+/**
  * The descriptor table for every supported grammar. Adding a language means
  * adding its grammar key here (and a `*_NODE_TYPES` table); the transforms are
  * generic over the descriptors, so no transform code changes per language.
@@ -241,6 +271,7 @@ export const NODE_TYPES_BY_GRAMMAR: Record<GrammarKey, DescriptorTable> = {
   typescript: TS_NODE_TYPES,
   tsx: TS_NODE_TYPES,
   php: PHP_NODE_TYPES,
+  json: JSON_NODE_TYPES,
 };
 
 /** The descriptor table for a grammar (empty if the grammar is unknown). */
@@ -259,6 +290,7 @@ const LINE_COMMENT_PREFIXES: Record<GrammarKey, string[]> = {
   typescript: ['//'],
   tsx: ['//'],
   php: ['//', '#'],
+  json: ['//'],
 };
 
 /** Whether `node` is a line comment in `grammar` (would be swallowed by a join). */

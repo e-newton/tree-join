@@ -2,7 +2,7 @@ import { assert, describe, expect, it } from 'vitest';
 import type { SyntaxNode, Tree } from '../../src/parseSource';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseSource } from '../../src/parseSource';
+import { LANGUAGE_ID_TO_GRAMMAR, parseSource } from '../../src/parseSource';
 import {
   descriptorFor,
   getClosingToken,
@@ -338,6 +338,86 @@ describe('PHP node types', () => {
       const block = node.children.find((c) => c?.type === 'comment');
       if (!block) assert.fail('no comment node found');
       expect(isLineComment(block, 'php')).toBe(false);
+    });
+  });
+});
+
+describe('JSON / JSONC node types', () => {
+  async function jsonNode(source: string, type: string, languageId = 'json'): Promise<SyntaxNode> {
+    const tree = await parseSource(source, languageId, async (filename: string) =>
+      readFileSync(join(__dirname, '../../wasm', filename)),
+    );
+    const node = walkToNodeType(tree.rootNode, type);
+    if (!node) assert.fail(`Unable to find ${type} node`);
+    return node;
+  }
+
+  it('supports array with unpadded brackets', async () => {
+    const node = await jsonNode('[1, 2, 3]', 'array');
+    expect(isSupported(node, 'json')).toBe(true);
+    const d = descriptorFor(node, 'json');
+    expect(d?.bracketSpacing).toBe(false);
+    expect(getOpeningToken(node, d!)).toBe('[');
+    expect(getClosingToken(node, d!)).toBe(']');
+    expect(resolveSeparator(node, d!)).toBe(',');
+  });
+
+  it('supports object with padded braces', async () => {
+    const node = await jsonNode('{ "a": 1 }', 'object');
+    expect(isSupported(node, 'json')).toBe(true);
+    const d = descriptorFor(node, 'json');
+    expect(d?.bracketSpacing).toBe(true);
+    expect(getOpeningToken(node, d!)).toBe('{');
+    expect(getClosingToken(node, d!)).toBe('}');
+  });
+
+  // A trailing separator is invalid in strict JSON, and tree-sitter-json cannot
+  // parse one even in JSONC — `{"a": 1,}` yields an ERROR node — so emitting one
+  // would leave text this extension can no longer re-parse. Both descriptors
+  // therefore override `tree-join.trailingComma` unconditionally.
+  it('forbids a trailing separator on both array and object', async () => {
+    const array = await jsonNode('[1, 2]', 'array');
+    const object = await jsonNode('{ "a": 1 }', 'object');
+    expect(descriptorFor(array, 'json')?.forbidTrailingSeparator).toBe(true);
+    expect(descriptorFor(object, 'json')?.forbidTrailingSeparator).toBe(true);
+  });
+
+  it('leaves non-container JSON nodes unsupported', async () => {
+    const pair = await jsonNode('{ "a": 1 }', 'pair');
+    const string = await jsonNode('{ "a": 1 }', 'string');
+    expect(isSupported(pair, 'json')).toBe(false);
+    expect(isSupported(string, 'json')).toBe(false);
+  });
+
+  it('resolves both the json and jsonc language ids to the json grammar', async () => {
+    expect(LANGUAGE_ID_TO_GRAMMAR['json']).toBe('json');
+    expect(LANGUAGE_ID_TO_GRAMMAR['jsonc']).toBe('json');
+    // Parsing through the `jsonc` id yields nodes the `json` table supports.
+    const node = await jsonNode('{ "a": 1 }', 'object', 'jsonc');
+    expect(isSupported(node, 'json')).toBe(true);
+  });
+
+  it('isolates descriptors by grammar (a JSON object is not a PHP node)', async () => {
+    const node = await jsonNode('{ "a": 1 }', 'object');
+    expect(isSupported(node, 'json')).toBe(true);
+    expect(isSupported(node, 'php')).toBe(false);
+    expect(descriptorFor(node, 'php')).toBeUndefined();
+  });
+
+  describe('isLineComment', () => {
+    it('treats // as a line comment (the JSONC join guard)', async () => {
+      const node = await jsonNode('{\n  // note\n  "a": 1\n}', 'object');
+      const comment = node.children.find((c) => c?.type === 'comment');
+      if (!comment) assert.fail('no comment node found');
+      expect(comment.text.startsWith('//')).toBe(true);
+      expect(isLineComment(comment, 'json')).toBe(true);
+    });
+
+    it('does not treat a block comment as a line comment', async () => {
+      const node = await jsonNode('{ /* note */ "a": 1 }', 'object');
+      const block = node.children.find((c) => c?.type === 'comment');
+      if (!block) assert.fail('no comment node found');
+      expect(isLineComment(block, 'json')).toBe(false);
     });
   });
 });

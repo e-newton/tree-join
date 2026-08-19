@@ -104,6 +104,12 @@ const runSplitTsx = (input: string, opts: Partial<SplitOptions> | undefined) =>
 const runSplitPhp = (input: string, opts: Partial<SplitOptions> | undefined) =>
   runSplitWith('php', input, opts);
 
+const runSplitJson = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitWith('json', input, opts);
+
+const runSplitJsonc = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitWith('jsonc', input, opts);
+
 const DEFAULT_JOIN_OPTIONS: JoinOptions = {};
 
 async function runJoinWith(
@@ -136,6 +142,12 @@ const runJoinTsx = (input: string, opts: Partial<JoinOptions> | undefined) =>
 
 const runJoinPhp = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinWith('php', input, opts);
+
+const runJoinJson = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinWith('json', input, opts);
+
+const runJoinJsonc = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinWith('jsonc', input, opts);
 
 runFixtures(new URL('../fixtures/sample', import.meta.url), async (input) => input);
 runFixtures<Partial<SplitOptions>>(
@@ -342,12 +354,16 @@ const runSplitRecursiveTsx = (input: string, opts: Partial<SplitOptions> | undef
   runSplitRecursiveWith('typescriptreact', input, opts);
 const runSplitRecursivePhp = (input: string, opts: Partial<SplitOptions> | undefined) =>
   runSplitRecursiveWith('php', input, opts);
+const runSplitRecursiveJson = (input: string, opts: Partial<SplitOptions> | undefined) =>
+  runSplitRecursiveWith('json', input, opts);
 const runJoinRecursive = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinRecursiveWith('typescript', input, opts);
 const runJoinRecursiveTsx = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinRecursiveWith('typescriptreact', input, opts);
 const runJoinRecursivePhp = (input: string, opts: Partial<JoinOptions> | undefined) =>
   runJoinRecursiveWith('php', input, opts);
+const runJoinRecursiveJson = (input: string, opts: Partial<JoinOptions> | undefined) =>
+  runJoinRecursiveWith('json', input, opts);
 
 runFixtures<Partial<SplitOptions>>(
   new URL('../fixtures/split-recursive', import.meta.url),
@@ -413,6 +429,10 @@ const runToggleTsx = (input: string, opts: ToggleOptions | undefined) =>
   runToggleWith('typescriptreact', input, opts);
 const runTogglePhp = (input: string, opts: ToggleOptions | undefined) =>
   runToggleWith('php', input, opts);
+const runToggleJson = (input: string, opts: ToggleOptions | undefined) =>
+  runToggleWith('json', input, opts);
+const runToggleJsonc = (input: string, opts: ToggleOptions | undefined) =>
+  runToggleWith('jsonc', input, opts);
 
 for (const type of [
   'array',
@@ -494,4 +514,83 @@ runFixtures<Partial<SplitOptions>>(
 runFixtures<Partial<JoinOptions>>(
   new URL('../fixtures/join-recursive-php', import.meta.url),
   runJoinRecursivePhp,
+);
+
+// --- JSON / JSONC fixtures ---
+// Same matrix as the other languages for each JSON node type: split, join (with
+// both refusal codes), toggle round-trip, plus recursive variants and the
+// settings dirs. JSON content lives in `.in.ts` files in the `*-json` dirs (the
+// suffix is the harness's, not the language's) and is parsed with the `json`
+// grammar. Neither node type ever emits a trailing separator, so the
+// `split-json/trailing-comma-*` dirs assert that all three modes agree.
+const JSON_NODE_TYPES = ['array', 'object'];
+
+for (const type of JSON_NODE_TYPES) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split-json/${type}`, import.meta.url),
+    runSplitJson,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join-json/${type}`, import.meta.url),
+    runJoinJson,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join-json/${type}-refused-width`, import.meta.url),
+    runJoinJson,
+  );
+  runFixtures<Partial<JoinOptions>>(
+    new URL(`../fixtures/join-json/${type}-refused-line-comment`, import.meta.url),
+    runJoinJson,
+  );
+  runFixtures<ToggleOptions>(
+    new URL(`../fixtures/toggle-json/${type}`, import.meta.url),
+    runToggleJson,
+  );
+}
+
+// JSON settings coverage: tab indentation, the trailingComma modes (none of
+// which may emit one), and bracketSpacing on objects.
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-json/object-tabs', import.meta.url),
+  (input, opts) => runSplitJson(input, { insertSpaces: false, ...(opts ?? {}) }),
+);
+for (const mode of ['add', 'preserve', 'never']) {
+  runFixtures<Partial<SplitOptions>>(
+    new URL(`../fixtures/split-json/trailing-comma-${mode}`, import.meta.url),
+    runSplitJson,
+  );
+}
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-json/bracket-spacing-off', import.meta.url),
+  runJoinJson,
+);
+
+// JSON recursive variants.
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-recursive-json', import.meta.url),
+  runSplitRecursiveJson,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-recursive-json', import.meta.url),
+  runJoinRecursiveJson,
+);
+
+// The `jsonc` language id resolves to the same grammar; these dirs run through
+// it to pin that mapping and the comment behavior that motivates the id — a
+// block comment survives a join, a `//` comment refuses one.
+runFixtures<Partial<SplitOptions>>(
+  new URL('../fixtures/split-jsonc/object', import.meta.url),
+  runSplitJsonc,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-jsonc/object', import.meta.url),
+  runJoinJsonc,
+);
+runFixtures<Partial<JoinOptions>>(
+  new URL('../fixtures/join-jsonc/object-refused-line-comment', import.meta.url),
+  runJoinJsonc,
+);
+runFixtures<ToggleOptions>(
+  new URL('../fixtures/toggle-jsonc/object', import.meta.url),
+  runToggleJsonc,
 );

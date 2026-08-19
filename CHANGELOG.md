@@ -7,10 +7,14 @@ All notable changes to this extension are documented here. Format: [Keep a Chang
 ### Added
 
 - **PHP array destructuring.** All commands now work on a destructuring target — `[$a, $b] = $c` and the legacy `list($a, $b) = $c` — including the keyed form `['a' => $x, 'b' => $y] = $row`, by-reference targets, and skipped slots. These parse as `list_literal`, not `array_creation_expression`, so they were previously unsupported even though PHP arrays were.
+- **JSON and JSONC support.** All commands (`tree-join.toggle`, `tree-join.split`, `tree-join.join`, `tree-join.splitRecursive`, `tree-join.joinRecursive`) now work in `json` and `jsonc` files, on `array` and `object` — so `package.json` dependency blocks, `tsconfig.json` option objects, and long string arrays flip between one line and many like any other construct.
+- The `tree-sitter-json` WASM grammar, lazy-loaded on first command like the existing grammars. It serves both language ids and adds ~6 KB to the package.
+- JSON-aware split behavior: a split never emits a trailing comma, whatever `tree-join.trailingComma` is set to. One is invalid in strict JSON, and even in `jsonc` the JSON grammar cannot parse it, so the result would be text Tree Join could no longer re-parse.
+- JSONC comment handling: a `//` comment inside the construct refuses a join (joining would swallow the rest of the line), while a `/* … */` comment joins inline.
 
 ### Changed
 
-- The five Tree Join commands are now hidden in the Command Palette unless the active editor is a language the extension supports (TypeScript, TSX, JavaScript, JSX, and PHP). They previously showed up in every file, where they could only ever be a no-op.
+- The five Tree Join commands are now hidden in the Command Palette unless the active editor is a language the extension supports (TypeScript, TSX, JavaScript, JSX, PHP, and JSON/JSONC). They previously showed up in every file, where they could only ever be a no-op.
 - Updated the build and test toolchain (esbuild, prettier, typescript-eslint, mocha, the `@vscode/test-*` and `vsce` tooling, and the `@types/vscode` typings) to current releases. No change to extension behaviour; the shipped bundle is the same size as before and still unminified.
 
 ## [1.1.2] - 2026-08-18
@@ -65,6 +69,7 @@ First public release.
 - **Quality tooling:** ESLint (flat config, `typescript-eslint` recommended-type-checked tier) and Prettier with project-wide formatting; `lint`, `lint:fix`, `format`, and `format:check` npm scripts; a `simple-git-hooks` + `lint-staged` pre-commit hook running Prettier on staged files.
 - **Test suites:** ~300 `*.in.ts`/`*.out.ts` fixture snapshots, an `@vscode/test-electron` integration smoke, and an `@vscode/test-web` headless browser smoke, all run in CI.
 
+[unreleased]: https://github.com/e-newton/tree-join/compare/v1.1.2...HEAD
 [1.1.2]: https://github.com/e-newton/tree-join/releases/tag/v1.1.2
 [1.1.1]: https://github.com/e-newton/tree-join/releases/tag/v1.1.1
 [1.1.0]: https://github.com/e-newton/tree-join/releases/tag/v1.1.0

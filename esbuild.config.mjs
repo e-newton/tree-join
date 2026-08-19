@@ -28,6 +28,7 @@ export function copyWasm() {
     'tree-sitter-typescript.wasm',
     'tree-sitter-tsx.wasm',
     'tree-sitter-php.wasm',
+    'tree-sitter-json.wasm',
   ];
   for (const name of wasmFiles) {
     cpSync(join(vendoredWasmDir, name), join(distWasmDir, name));

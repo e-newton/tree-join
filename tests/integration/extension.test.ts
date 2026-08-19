@@ -83,6 +83,20 @@ suite('tree-join integration', () => {
     assert.strictEqual(editor.document.getText(), single, 'php join text mismatch');
   });
 
+  test('toggles a json object (json grammar activates and loads)', async () => {
+    const single = '{ "name": "x", "version": "1.0.0" }';
+    const multi = ['{', '  "name": "x",', '  "version": "1.0.0"', '}'].join('\n');
+    const editor = await openDoc(single, 'json');
+    const onName = new vscode.Position(0, single.indexOf('"name"'));
+    editor.selection = new vscode.Selection(onName, onName);
+
+    await runCommand('tree-join.toggle');
+    assert.strictEqual(editor.document.getText(), multi, 'json split text mismatch');
+
+    await runCommand('tree-join.toggle');
+    assert.strictEqual(editor.document.getText(), single, 'json join text mismatch');
+  });
+
   test('multi-cursor toggle applies and undoes as one step', async () => {
     const content = ['const a = [1, 2, 3];', 'const b = [4, 5, 6];'].join('\n');
     const editor = await openDoc(content);

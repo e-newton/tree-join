@@ -1,7 +1,7 @@
 {
   "name": "tree-join",
   "displayName": "Tree Join",
-  "description": "Toggle, split, and join TypeScript/JavaScript/PHP constructs using tree-sitter.",
+  "description": "Toggle, split, and join TypeScript/JavaScript/PHP/JSON constructs using tree-sitter.",
   "version": "1.1.2",
   "publisher": "EricNewton",
   "license": "MIT",
@@ -28,6 +28,7 @@
     "typescript",
     "javascript",
     "php",
+    "json",
     "formatter",
     "split",
     "join"
@@ -39,7 +40,9 @@
     "onLanguage:typescriptreact",
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
-    "onLanguage:php"
+    "onLanguage:php",
+    "onLanguage:json",
+    "onLanguage:jsonc"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -85,27 +88,27 @@
       {
         "command": "tree-join.toggle",
         "title": "Tree Join: Toggle",
-        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php|json|jsonc)$/"
       },
       {
         "command": "tree-join.join",
         "title": "Tree Join: Join",
-        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php|json|jsonc)$/"
       },
       {
         "command": "tree-join.split",
         "title": "Tree Join: Split",
-        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php|json|jsonc)$/"
       },
       {
         "command": "tree-join.splitRecursive",
         "title": "Tree Join: Split Recursive",
-        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php|json|jsonc)$/"
       },
       {
         "command": "tree-join.joinRecursive",
         "title": "Tree Join: Join Recursive",
-        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php)$/"
+        "enablement": "editorLangId =~ /^(typescript|typescriptreact|javascript|javascriptreact|php|json|jsonc)$/"
       }
     ]
   },

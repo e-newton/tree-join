@@ -1,0 +1,3 @@
+{
+  "compilerOptions": { "strict": true, "target": "ES2022" }
+}
