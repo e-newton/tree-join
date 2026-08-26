@@ -1,3 +1,3 @@
 <?php [
-  $only,
+  $only
 ] = $pair;

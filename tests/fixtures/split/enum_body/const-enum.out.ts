@@ -1,4 +1,4 @@
 const enum E {
   A,
-  B,
+  B
 }

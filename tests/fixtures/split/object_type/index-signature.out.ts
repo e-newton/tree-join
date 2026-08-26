@@ -1,4 +1,4 @@
 type X = {
   [k: string]: number;
-  v: boolean;
+  v: boolean
 };

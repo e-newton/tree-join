@@ -1,4 +1,4 @@
 enum Direction {
   Up = "UP",
-  Down = "DOWN",
+  Down = "DOWN"
 }

@@ -1,5 +1,5 @@
 function f(
   a,
   b,
-  c,
+  c
 ) {}

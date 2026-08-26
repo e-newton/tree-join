@@ -1,4 +1,4 @@
 <?php register(
   name: $name,
-  age: 30,
+  age: 30
 );

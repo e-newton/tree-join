@@ -1,10 +1,10 @@
 <?php route(
   [
     'GET',
-    'POST',
+    'POST'
   ],
   handle(
     $a,
-    $b,
-  ),
+    $b
+  )
 );

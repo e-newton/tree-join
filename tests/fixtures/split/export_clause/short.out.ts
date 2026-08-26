@@ -1,5 +1,5 @@
 export {
   a,
   b,
-  c,
+  c
 };

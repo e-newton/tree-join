@@ -15,7 +15,7 @@ export function splitOptionsFor(editor: vscode.TextEditor): SplitOptions {
   const config = vscode.workspace.getConfiguration('tree-join', editor.document);
   return {
     ...tabOptions(editor),
-    trailingComma: config.get<TrailingComma>('trailingComma', 'add'),
+    trailingComma: config.get<TrailingComma>('trailingComma', 'preserve'),
   };
 }
 

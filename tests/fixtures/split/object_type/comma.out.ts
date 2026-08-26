@@ -1,4 +1,4 @@
 type X = {
   a: string,
-  b: number,
+  b: number
 };

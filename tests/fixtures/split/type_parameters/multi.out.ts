@@ -1,4 +1,4 @@
 function foo<
   T extends Bar,
-  U = string,
+  U = string
 >() {}

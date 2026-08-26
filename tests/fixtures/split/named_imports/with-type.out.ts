@@ -1,5 +1,5 @@
 import {
   type A,
   type B,
-  c,
+  c
 } from 'mod';

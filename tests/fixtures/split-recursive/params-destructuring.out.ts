@@ -2,10 +2,10 @@ function f(
   a,
   {
     b,
-    c,
+    c
   },
   [
     d,
-    e,
-  ],
+    e
+  ]
 ) {}

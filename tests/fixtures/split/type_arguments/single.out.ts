@@ -1,3 +1,3 @@
 const x: Foo<
-  A,
+  A
 > = bar;

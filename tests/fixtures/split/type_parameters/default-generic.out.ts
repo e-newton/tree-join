@@ -1,3 +1,3 @@
 function foo<
-  T = Foo<A, B>,
+  T = Foo<A, B>
 >() {}

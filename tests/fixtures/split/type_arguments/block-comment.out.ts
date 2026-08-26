@@ -1,4 +1,4 @@
 const x: Foo<
   A, /* note */
-  B,
+  B
 > = bar;

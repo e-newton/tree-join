@@ -1,4 +1,4 @@
 function f(
   { a, b },
-  [c, d],
+  [c, d]
 ) {}

@@ -1,4 +1,4 @@
 const f = (
   a,
-  b,
+  b
 ) => a + b;

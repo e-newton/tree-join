@@ -1,4 +1,4 @@
 interface Foo {
   [key: string]: number;
-  a: number;
+  a: number
 }

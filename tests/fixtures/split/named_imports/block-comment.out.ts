@@ -1,5 +1,5 @@
 import {
   a /* one */,
   b,
-  c,
+  c
 } from 'mod';

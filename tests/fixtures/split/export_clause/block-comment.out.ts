@@ -1,5 +1,5 @@
 export {
   a /* one */,
   b,
-  c,
+  c
 };

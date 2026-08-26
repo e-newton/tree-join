@@ -116,6 +116,18 @@ describe('package.json manifest', () => {
       [...EXPECTED_SETTINGS].sort(),
     );
   });
+
+  // The manifest default is what VSCode hands `config.get`'s first argument
+  // path, while `src/config.ts` supplies the fallback for the second. They are
+  // written in two places and must agree, or the documented default silently
+  // stops matching what a fresh install does.
+  it('defaults trailingComma to preserve, matching the code fallback', () => {
+    const setting = pkg.contributes.configuration.properties['tree-join.trailingComma'] as {
+      default: string;
+    };
+    expect(setting.default).toBe('preserve');
+    expect(read('src/config.ts')).toContain(`'trailingComma', '${setting.default}'`);
+  });
 });
 
 describe('extension icon', () => {

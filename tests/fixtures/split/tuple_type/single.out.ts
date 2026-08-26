@@ -1,3 +1,3 @@
 type X = [
-  a: string,
+  a: string
 ];

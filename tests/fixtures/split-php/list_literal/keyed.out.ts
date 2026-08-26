@@ -1,4 +1,4 @@
 <?php [
   'a' => $first,
-  'b' => $second,
+  'b' => $second
 ] = $row;

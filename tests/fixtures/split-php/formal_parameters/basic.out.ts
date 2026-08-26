@@ -1,4 +1,4 @@
 <?php function greet(
   string $name,
-  int $age,
+  int $age
 ) {}

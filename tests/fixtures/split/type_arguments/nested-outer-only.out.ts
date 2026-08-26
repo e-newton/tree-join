@@ -1,4 +1,4 @@
 const x: Foo<
   Bar<A, B>,
-  C,
+  C
 > = bar;
