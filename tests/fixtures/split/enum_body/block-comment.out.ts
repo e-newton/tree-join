@@ -1,4 +1,4 @@
 enum E {
   A, /* note */
-  B,
+  B
 }

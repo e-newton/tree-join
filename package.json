@@ -72,9 +72,9 @@
             "Keep a trailing separator only if the source already had one.",
             "Never add a trailing separator on split."
           ],
-          "default": "add",
+          "default": "preserve",
           "scope": "language-overridable",
-          "markdownDescription": "Trailing comma (or separator) behavior on split. Join always removes trailing separators."
+          "markdownDescription": "Trailing comma (or separator) behavior on split. Join always removes trailing separators. A trailing separator is never added where it would be a syntax error (after a rest/variadic element, in a type argument list, in JSON, or in a PHP group `use`)."
         },
         "tree-join.bracketSpacing": {
           "type": "boolean",

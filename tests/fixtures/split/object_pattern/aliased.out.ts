@@ -1,4 +1,4 @@
 const {
   a: x,
-  b: y,
+  b: y
 } = obj;

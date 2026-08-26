@@ -83,8 +83,13 @@ dirs; refusals live in `join/jsx_attributes-refused-*`.
 ⁴ Covers both the `[…]` and legacy `array(…)` surface forms. The
 `*-refused-line-comment` dirs cover both `//` and `#` PHP line comments.
 `namespace_use_group` never emits a trailing comma on split (a syntax error
-there); the `split-php/trailing-comma-*` and `split-php/array-tabs` dirs cover
-the settings on PHP arrays.
+there), and neither does a `formal_parameters` list ending in a variadic
+parameter or an `arguments` list holding the first-class-callable `...`
+placeholder — `split-php/trailing-comma-add/{variadic-parameter,first-class-callable}`
+pin that even under `trailingComma: "add"`, while `variadic-unpacking` pins that
+an ordinary `...$rest` argument still takes one. The
+`split-php/trailing-comma-*` and `split-php/array-tabs` dirs cover the settings
+on PHP arrays.
 
 ⁵ Array destructuring targets — both `[$a, $b] = $c` and legacy
 `list($a, $b) = $c`. Unlike `array_creation_expression`, a keyed element exposes
@@ -114,6 +119,9 @@ split/<node_type>/              # force-split per node type
 split/literals/                 # array + object
 split/literals-tabs/            # tab-indented variants
 split/trailing-comma-{add,never,preserve}/   # T-14 trailingComma setting
+                                #   `add` also pins the constructs that refuse a
+                                #   trailing separator outright: rest elements
+                                #   (`rest-*`) and `type_arguments`
 join/<node_type>/               # force-join per node type
 join/<node_type>-refused-width/         # width-guard refusals
 join/<node_type>-refused-line-comment/  # line-comment-guard refusals

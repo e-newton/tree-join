@@ -2,5 +2,5 @@ const [
   ,
   a,
   ,
-  b,
+  b
 ] = xs;

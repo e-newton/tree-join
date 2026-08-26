@@ -1,7 +1,7 @@
 const x: Foo<
   Bar<
     A,
-    B,
+    B
   >,
-  C,
+  C
 > = bar;

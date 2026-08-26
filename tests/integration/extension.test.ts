@@ -11,7 +11,9 @@ const COMMANDS = [
 ];
 
 const SINGLE_LINE = 'const xs = [1, 2, 3];';
-const MULTI_LINE = ['const xs = [', '  1,', '  2,', '  3,', '];'].join('\n');
+// No trailing comma after `3`: `tree-join.trailingComma` defaults to `preserve`
+// and the single-line source has none.
+const MULTI_LINE = ['const xs = [', '  1,', '  2,', '  3', '];'].join('\n');
 
 async function openDoc(content: string, language = 'typescript'): Promise<vscode.TextEditor> {
   const doc = await vscode.workspace.openTextDocument({ content, language });
@@ -71,7 +73,7 @@ suite('tree-join integration', () => {
 
   test('toggles a php array (php grammar activates and loads)', async () => {
     const single = '<?php $xs = [1, 2, 3];';
-    const multi = ['<?php $xs = [', '  1,', '  2,', '  3,', '];'].join('\n');
+    const multi = ['<?php $xs = [', '  1,', '  2,', '  3', '];'].join('\n');
     const editor = await openDoc(single, 'php');
     const onTwo = new vscode.Position(0, single.indexOf('2'));
     editor.selection = new vscode.Selection(onTwo, onTwo);
@@ -154,7 +156,7 @@ suite('tree-join integration', () => {
     ];
 
     await runCommand('tree-join.toggle');
-    const expected = ['const xs = [', '  1,', '  [2, 3],', '  4,', '];'].join('\n');
+    const expected = ['const xs = [', '  1,', '  [2, 3],', '  4', '];'].join('\n');
     assert.strictEqual(editor.document.getText(), expected, 'nested targets did not collapse');
   });
 });

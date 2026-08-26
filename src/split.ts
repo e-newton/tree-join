@@ -1,5 +1,6 @@
 import {
   descriptorFor,
+  forbidsTrailingSeparatorAfter,
   getChildren,
   getClosingToken,
   getOpeningToken,
@@ -15,22 +16,28 @@ import { ElementOffsets, Range, TransformSuccess } from './types';
 export type SplitOptions = {
   tabSize: number;
   insertSpaces: boolean;
-  /** Trailing separator behavior on split. Undefined behaves like 'add'. */
+  /** Trailing separator behavior on split. Undefined behaves like 'preserve'. */
   trailingComma?: 'add' | 'preserve' | 'never';
 };
 
 /**
  * Whether the last element should carry a trailing separator, per the
- * `trailingComma` setting. `add` (default) always emits one, `never` never
- * does, and `preserve` mirrors whether the source already had one. JSX
+ * `trailingComma` setting. `add` always emits one, `never` never does, and
+ * `preserve` (the default) mirrors whether the source already had one. JSX
  * (whitespace-separated) is exempt and decided by the per-run `hasSeparator`.
+ *
+ * Constructs where a trailing separator is a syntax error opt out of `add`
+ * entirely — either for every node (`forbidTrailingSeparator`) or based on the
+ * last element (`forbidTrailingSeparatorAfter`, e.g. a JS rest element).
  */
 function emitTrailingSeparator(
   node: SyntaxNode,
   descriptor: NodeTypeDescriptor,
+  lastElement: SyntaxNode | undefined,
   mode: 'add' | 'preserve' | 'never',
 ): boolean {
   if (descriptor.forbidTrailingSeparator) return false;
+  if (forbidsTrailingSeparatorAfter(descriptor, lastElement)) return false;
   if (mode === 'add') return true;
   if (mode === 'never') return false;
   const separators = separatorsFor(descriptor);
@@ -76,7 +83,12 @@ export function splitNode(
   const openingToken = getOpeningToken(node, descriptor);
   const firstElementOffsetInNewText = openingToken.length + 1; // openToken + '\n'
   const separator = resolveSeparator(node, descriptor);
-  const trailingSeparator = emitTrailingSeparator(node, descriptor, opts.trailingComma ?? 'add');
+  const trailingSeparator = emitTrailingSeparator(
+    node,
+    descriptor,
+    elementRuns.at(-1)?.nodes.at(-1),
+    opts.trailingComma ?? 'preserve',
+  );
   const { strings, elements } = buildElements(
     elementRuns,
     separator,

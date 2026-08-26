@@ -1,5 +1,5 @@
 const {
   a,
   b,
-  ...rest,
+  ...rest
 } = obj;

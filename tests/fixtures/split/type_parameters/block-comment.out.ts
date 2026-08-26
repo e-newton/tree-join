@@ -1,4 +1,4 @@
 function foo<
   T, /* x */
-  U,
+  U
 >() {}

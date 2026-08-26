@@ -1,4 +1,4 @@
 const {
   a: { b },
-  c: [d, e],
+  c: [d, e]
 } = obj;

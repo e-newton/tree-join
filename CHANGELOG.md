@@ -2,6 +2,16 @@
 
 All notable changes to this extension are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A split no longer emits a trailing separator where one is a syntax error.** Splitting a list that ends in a JS/TS rest element — `function f(a, ...rest) {}`, `const [a, ...rest] = xs`, `const { a, ...rest } = obj` — put a comma after it and broke the file, as did splitting PHP's first-class-callable `strlen(...)`, or a type argument list (`Foo<A, B>`, where TypeScript rejects a trailing comma even though it accepts one in a type _parameter_ list). None of these take a trailing separator any more, whatever `tree-join.trailingComma` is set to — the same rule JSON and PHP group-use lists already followed. A PHP variadic parameter (`function f(int ...$rest)`) is treated the same way for consistency, though current PHP does parse a comma there. Ordinary spreads that may legally be followed by a comma (`foo(a, ...rest)`, `[1, ...ys]`, PHP `foo($a, ...$rest)`) are unaffected.
+
+### Changed
+
+- **`tree-join.trailingComma` now defaults to `preserve` instead of `add`.** A split keeps a trailing separator only if the source already had one, so splitting no longer rewrites a list's trailing-comma style on its own — which also stops it from introducing a comma that older PHP (before 8.0 in a parameter list, before 7.3 in a call) rejects. Set `"tree-join.trailingComma": "add"` to get the previous behavior back.
+
 ## [1.2.0] - 2026-08-19
 
 ### Added

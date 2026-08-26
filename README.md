@@ -57,17 +57,19 @@ In `json` and `jsonc`:
 | -------------- | ---------------------- |
 | **Containers** | `array`, `object`      |
 
-Object-like constructs (`object`, `object_pattern`, `object_type`, `interface_body`, `enum_body`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`). A PHP group-use list never takes a trailing comma (it is a syntax error there).
+Object-like constructs (`object`, `object_pattern`, `object_type`, `interface_body`, `enum_body`, `named_imports`, `export_clause`, PHP `match_block`) get padded braces on join (`{ a: 1 }`); everything else is unpadded (`[1, 2]`).
+
+A trailing separator is never added where the language rejects one, whatever `tree-join.trailingComma` says: after a rest element or variadic parameter (`function f(a, ...rest)`, `const { a, ...rest } = o`, PHP `function f(int ...$rest)`), in a type argument list (`Map<string, number>`), after PHP's first-class-callable placeholder (`strlen(...)`), and in a PHP group-use list (`use Foo\{A, B}`).
 
 JSON never takes one either, whatever `tree-join.trailingComma` says: a trailing comma is invalid JSON, and even in `jsonc` the JSON grammar cannot parse one. In `jsonc`, a `//` comment inside the construct refuses a join (it would swallow the rest of the line); a `/* … */` comment joins inline.
 
 ## Settings
 
-| Setting                    | Type                                 | Default | Description                                                                                                                            |
-| -------------------------- | ------------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `tree-join.maxJoinLength`  | `number`                             | `100`   | Max line length for a join result; longer joins are refused. Set to `0` to use the first `editor.rulers` column (falling back to 100). |
-| `tree-join.trailingComma`  | `"add"` \| `"preserve"` \| `"never"` | `"add"` | Trailing comma/separator behavior on split. Join always strips trailing separators.                                                    |
-| `tree-join.bracketSpacing` | `boolean`                            | `true`  | Pad inside object-like braces on join (`{ a: 1 }` vs `{a: 1}`).                                                                        |
+| Setting                    | Type                                 | Default      | Description                                                                                                                                           |
+| -------------------------- | ------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tree-join.maxJoinLength`  | `number`                             | `100`        | Max line length for a join result; longer joins are refused. Set to `0` to use the first `editor.rulers` column (falling back to 100).                |
+| `tree-join.trailingComma`  | `"add"` \| `"preserve"` \| `"never"` | `"preserve"` | Trailing comma/separator behavior on split. `preserve` keeps a trailing separator only if the source had one. Join always strips trailing separators. |
+| `tree-join.bracketSpacing` | `boolean`                            | `true`       | Pad inside object-like braces on join (`{ a: 1 }` vs `{a: 1}`).                                                                                       |
 
 All three are `language-overridable`, so you can scope them per language (e.g. a different `maxJoinLength` for `typescriptreact`).
 

@@ -25,6 +25,17 @@ export interface NodeTypeDescriptor {
    */
   forbidTrailingSeparator?: boolean;
   /**
+   * Element node types that may not be followed by a trailing separator, even
+   * when `trailingComma` is `add`. Unlike `forbidTrailingSeparator` this is
+   * decided per node from its *last* element: JS/TS rest elements
+   * (`function f(a, ...rest)`, `const [a, ...rest] = xs`) must be the last
+   * thing in the list, so a comma after one is a syntax error, while the same
+   * `...` spread in a call argument list is fine. A wrapper node counts when
+   * the listed type is its first named child, since a typed rest parameter
+   * parses as `required_parameter` > `rest_pattern`.
+   */
+  forbidTrailingSeparatorAfter?: string[];
+  /**
    * Some constructs have more than one surface form with different brackets
    * (e.g. PHP `[...]` vs `array(...)`, both `array_creation_expression`). When
    * set, the open/close delimiters are resolved per node from this function
@@ -81,6 +92,7 @@ const TS_NODE_TYPES: DescriptorTable = {
     separator: ',',
     bracketSpacing: false,
     elementsField: { kind: 'named-children' },
+    forbidTrailingSeparatorAfter: ['rest_pattern'],
   },
   array_pattern: {
     type: 'array_pattern',
@@ -89,6 +101,7 @@ const TS_NODE_TYPES: DescriptorTable = {
     separator: ',',
     bracketSpacing: false,
     elementsField: { kind: 'named-children' },
+    forbidTrailingSeparatorAfter: ['rest_pattern'],
   },
   object_pattern: {
     type: 'object_pattern',
@@ -97,6 +110,7 @@ const TS_NODE_TYPES: DescriptorTable = {
     separator: ',',
     bracketSpacing: true,
     elementsField: { kind: 'named-children' },
+    forbidTrailingSeparatorAfter: ['rest_pattern'],
   },
   named_imports: {
     type: 'named_imports',
@@ -130,6 +144,8 @@ const TS_NODE_TYPES: DescriptorTable = {
     bracketSpacing: true,
     elementsField: { kind: 'jsx-element-children' },
   },
+  // TypeScript rejects a trailing comma in a type *argument* list (`Map<a, b,>`
+  // is error TS1009) even though it accepts one in a type *parameter* list.
   type_arguments: {
     type: 'type_arguments',
     openToken: '<',
@@ -137,6 +153,7 @@ const TS_NODE_TYPES: DescriptorTable = {
     separator: ',',
     bracketSpacing: false,
     elementsField: { kind: 'named-children' },
+    forbidTrailingSeparator: true,
   },
   type_parameters: {
     type: 'type_parameters',
@@ -215,6 +232,8 @@ const PHP_NODE_TYPES: DescriptorTable = {
     delimiters: (node) =>
       node.children[0]?.type === '[' ? { open: '[', close: ']' } : { open: 'list(', close: ')' },
   },
+  // A first-class callable (`strlen(...)`) parses as an `arguments` node whose
+  // sole element is the `...` placeholder; `strlen(...,)` is a parse error.
   arguments: {
     type: 'arguments',
     openToken: '(',
@@ -222,7 +241,11 @@ const PHP_NODE_TYPES: DescriptorTable = {
     separator: ',',
     bracketSpacing: false,
     elementsField: { kind: 'named-children' },
+    forbidTrailingSeparatorAfter: ['variadic_placeholder'],
   },
+  // A variadic parameter has to be the last parameter. PHP 8.4 does parse a
+  // comma after one, but it is redundant there and the same shape is a syntax
+  // error in JS/TS, so never emit it in either grammar.
   formal_parameters: {
     type: 'formal_parameters',
     openToken: '(',
@@ -230,6 +253,7 @@ const PHP_NODE_TYPES: DescriptorTable = {
     separator: ',',
     bracketSpacing: false,
     elementsField: { kind: 'named-children' },
+    forbidTrailingSeparatorAfter: ['variadic_parameter'],
   },
   // Group `use Foo\{A, B};` import list — the PHP analogue of `named_imports`.
   namespace_use_group: {
@@ -328,6 +352,23 @@ export function descriptorFor(
   grammar: GrammarKey,
 ): NodeTypeDescriptor | undefined {
   return descriptorsFor(grammar)[node.type];
+}
+
+/**
+ * Whether a trailing separator after `lastElement` would be a syntax error,
+ * per the descriptor's `forbidTrailingSeparatorAfter` list. Checked against the
+ * element node itself and its first named child, so a bare `rest_pattern` and a
+ * typed `required_parameter` > `rest_pattern` both match.
+ */
+export function forbidsTrailingSeparatorAfter(
+  descriptor: NodeTypeDescriptor,
+  lastElement: SyntaxNode | undefined,
+): boolean {
+  const forbidden = descriptor.forbidTrailingSeparatorAfter;
+  if (!forbidden || !lastElement) return false;
+  if (forbidden.includes(lastElement.type)) return true;
+  const inner = lastElement.namedChildren[0];
+  return !!inner && forbidden.includes(inner.type);
 }
 
 /** Tokens that count as element separators for this node type. */

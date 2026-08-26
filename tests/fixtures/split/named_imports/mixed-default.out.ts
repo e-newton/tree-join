@@ -1,4 +1,4 @@
 import def, {
   a,
-  b,
+  b
 } from 'mod';

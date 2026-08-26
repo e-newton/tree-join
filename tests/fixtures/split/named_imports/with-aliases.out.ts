@@ -1,5 +1,5 @@
 import {
   a as x,
   b as y,
-  c,
+  c
 } from 'mod';

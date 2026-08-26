@@ -1,5 +1,5 @@
 const [
   a,
   b,
-  c,
+  c
 ] = xs;

@@ -1,4 +1,4 @@
 function f(
   a: number,
-  b: string,
+  b: string
 ) {}
